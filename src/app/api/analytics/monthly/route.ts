@@ -6,6 +6,7 @@ import User from '../../../../models/User';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
   try {
@@ -17,22 +18,26 @@ export async function GET(req: Request) {
     const account = searchParams.get('account');
 
     const matchInner: any = {};
-    if (account && ['cash','bank','upi','wallet'].includes(account)) matchInner['transactions.account'] = account;
+    if (account) matchInner['transactions.account'] = account;
     if (from || to) {
       matchInner['transactions.date'] = {} as any;
       if (from) (matchInner['transactions.date'] as any).$gte = new Date(from);
       if (to) (matchInner['transactions.date'] as any).$lte = new Date(to);
     }
 
-    const rows = await User.aggregate([
+    const pipeline: any[] = [
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       { $unwind: '$transactions' },
-      Object.keys(matchInner).length ? { $match: matchInner } : undefined,
+    ];
+    if (Object.keys(matchInner).length) pipeline.push({ $match: matchInner });
+    pipeline.push(
       { $project: { month: { $dateToString: { format: '%Y-%m', date: '$transactions.date' } }, type: '$transactions.type', amount: '$transactions.amount' } },
       { $group: { _id: { month: '$month', type: '$type' }, total: { $sum: '$amount' } } },
       { $project: { _id: 0, month: '$_id.month', type: '$_id.type', total: 1 } },
       { $sort: { month: 1 } },
-    ].filter(Boolean));
+    );
+
+    const rows = await User.aggregate(pipeline);
 
     const map = new Map<string, { month: string; income: number; expense: number }>();
     for (const r of rows) {
