@@ -4,6 +4,7 @@ import "./globals.css";
 import ToastProvider from "@/components/ui/toast";
 import ThemeProvider from "@/components/theme-provider";
 import ThemeToggle from "@/components/theme-toggle";
+
 import PWARegister from "@/components/pwa-register";
 import NextSessionProvider from "@/components/session-provider";
 import AuthButtons from "@/components/auth-buttons";

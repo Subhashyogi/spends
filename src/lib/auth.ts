@@ -3,6 +3,7 @@ import type { NextAuthOptions } from "next-auth";
 import bcrypt from "bcryptjs";
 import connectToDatabase from "@/lib/db";
 import User from "@/models/User";
+import ActivityLog from "@/models/ActivityLog";
 
 // Ensure NEXTAUTH_URL is set in serverless environments (Netlify/Vercel) if missing
 (() => {
@@ -34,6 +35,15 @@ export const authOptions: NextAuthOptions = {
         if (!user) return null;
         const ok = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!ok) return null;
+
+        // Log activity
+        await ActivityLog.create({
+          userId: user._id,
+          action: 'LOGIN',
+          entity: 'SESSION',
+          details: 'User logged in',
+        });
+
         return { id: user._id.toString(), name: user.name, email: user.email } as any;
       },
     }),
@@ -57,5 +67,8 @@ export const authOptions: NextAuthOptions = {
         return baseUrl;
       }
     },
+  },
+  pages: {
+    signIn: "/auth/signin",
   },
 };

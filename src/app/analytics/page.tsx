@@ -18,6 +18,11 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import SavingsAdvisorCard from "@/components/savings-advisor-card";
+import PredictorCard from "@/components/predictor-card";
+import CashflowProjectionChart from "@/components/cashflow-projection-chart";
+import CategoryRadarChart from "@/components/category-radar-chart";
+import DailyLimitCard from "@/components/daily-limit-card";
 
 function lastMonths(n: number) {
   const out: { from: string; to: string } = { from: "", to: "" } as any;
@@ -119,14 +124,14 @@ export default function AnalyticsPage() {
           <option value="wallet">Wallet</option>
         </select>
         <label className="ml-4 text-sm text-zinc-600 dark:text-zinc-300">From</label>
-        <input type="date" value={from.slice(0,10)} onChange={(e) => setFrom(new Date(e.target.value).toISOString())} className="rounded-xl border bg-white/80 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900/60" />
+        <input type="date" value={from.slice(0, 10)} onChange={(e) => setFrom(new Date(e.target.value).toISOString())} className="rounded-xl border bg-white/80 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900/60" />
         <label className="text-sm text-zinc-600 dark:text-zinc-300">To</label>
-        <input type="date" value={to.slice(0,10)} onChange={(e) => setTo(new Date(e.target.value).toISOString())} className="rounded-xl border bg-white/80 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900/60" />
+        <input type="date" value={to.slice(0, 10)} onChange={(e) => setTo(new Date(e.target.value).toISOString())} className="rounded-xl border bg-white/80 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900/60" />
       </div>
 
       {error && <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-sm text-rose-600 dark:text-rose-400">{error}</div>}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border bg-white/70 p-5 shadow-sm backdrop-blur dark:bg-zinc-900/60">
           <h3 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-200">Expenses by Category</h3>
           <div className="h-72 w-full">
@@ -174,6 +179,20 @@ export default function AnalyticsPage() {
             </ResponsiveContainer>
           </div>
         </motion.div>
+      </div>
+
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <DailyLimitCard />
+          <CategoryRadarChart />
+        </div>
+
+        <CashflowProjectionChart />
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <PredictorCard />
+          <SavingsAdvisorCard />
+        </div>
       </div>
     </main>
   );

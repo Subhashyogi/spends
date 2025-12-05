@@ -9,6 +9,9 @@ const TransactionSchema = new Schema(
     category: { type: String },
     account: { type: String, enum: ['cash', 'bank', 'upi', 'wallet'], default: 'cash' },
     date: { type: Date, default: Date.now },
+    isRecurring: { type: Boolean, default: false },
+    frequency: { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly'], required: false },
+    nextDueDate: { type: Date, required: false },
   },
   { timestamps: true }
 );

@@ -10,3 +10,24 @@
 /* Improve native UI colors */
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
+
+/* Global cursor pointer for interactive elements */
+button, 
+[type='button'], 
+[type='reset'], 
+[type='submit'], 
+[role="button"],
+a,
+select,
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[type='button']:disabled,
+[type='reset']:disabled,
+[type='submit']:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}

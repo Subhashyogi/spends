@@ -2,6 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import Button from "@/components/ui/button";
+import Link from "next/link";
 import { User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -33,35 +34,14 @@ export default function AuthButtons() {
 
   const name = data.user.name || "User";
   const email = data.user.email || "";
-  // id was attached in session callbacks
-  const id = (data.user as any)?.id as string | undefined;
 
   return (
-    <div ref={ref} className="relative">
-      <Button
-        aria-label="Account"
-        variant="secondary"
-        size="sm"
-        onClick={() => setOpen((v) => !v)}
-        title={name}
-      >
-        <User className="h-4 w-4" />
-      </Button>
-      {open && (
-        <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border bg-white/95 p-3 text-sm shadow-lg backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/95">
-          <div className="mb-2">
-            <div className="font-medium text-zinc-900 dark:text-zinc-50">{name}</div>
-            {email && <div className="truncate text-xs text-zinc-600 dark:text-zinc-300">{email}</div>}
-            {id && <div className="mt-1 truncate text-[10px] text-zinc-400">ID: {id}</div>}
-          </div>
-          <div className="mb-2 flex items-center justify-between">
-            <a href="/settings" className="text-xs text-indigo-600 hover:underline dark:text-indigo-400">Settings</a>
-          </div>
-          <div className="flex items-center justify-end">
-            <Button size="sm" variant="secondary" onClick={() => signOut({ callbackUrl: "/" })}>Sign out</Button>
-          </div>
-        </div>
-      )}
-    </div>
+    <Link
+      href="/profile"
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+      title={name}
+    >
+      <User className="h-4 w-4" />
+    </Link>
   );
 }

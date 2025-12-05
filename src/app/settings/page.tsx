@@ -1,113 +1,67 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { safeJson } from "@/lib/http";
 import Link from "next/link";
-
-const CURRENCIES = ["INR", "USD", "EUR", "GBP", "JPY"] as const;
+import BackupManager from "@/components/backup-manager";
+import ActivityLog from "@/components/activity-log";
+import SecuritySettings from "@/components/security-settings";
+import { ArrowLeft, Shield, Database, Activity } from "lucide-react";
 
 export default function SettingsPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [currency, setCurrency] = useState<string>("INR");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/user/settings", { cache: "no-store" });
-        const { ok, data, status } = await safeJson(res);
-        if (!ok) throw new Error(data?.message || data?.error || `HTTP ${status}`);
-        setName(data.name || "");
-        setEmail(data.email || "");
-        setCurrency(data.currency || "INR");
-      } catch (e: any) {
-        setError(e?.message || "Failed to load settings");
-      }
-    })();
-  }, []);
-
-  async function onSave() {
-    setSaving(true);
-    setError(null);
-    setSaved(false);
-    try {
-      const res = await fetch("/api/user/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, currency }),
-      });
-      const { ok, data, status } = await safeJson(res);
-      if (!ok) throw new Error(data?.message || data?.error || `HTTP ${status}`);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1500);
-      // broadcast to refresh UI widgets
-      window.dispatchEvent(new CustomEvent("userSettingsUpdated"));
-    } catch (e: any) {
-      setError(e?.message || "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
-    <main className="space-y-8">
-      <div className="space-y-2">
-        <div className="pt-1">
+    <main className="min-h-screen space-y-8 bg-zinc-50 p-4 dark:bg-black sm:p-8">
+      <div className="mx-auto max-w-2xl space-y-8">
+        {/* Header */}
+        <div className="space-y-1">
           <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            href="/profile"
+            className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
           >
-            ← Back
+            <ArrowLeft className="h-4 w-4" /> Back to Profile
           </Link>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Settings</h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Manage security, backups, and activity logs.</p>
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Settings</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Manage your profile and preferences.</p>
-      </div>
 
-      {error && (
-        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-sm text-rose-600 dark:text-rose-400">{error}</div>
-      )}
-
-      <div className="rounded-2xl border bg-white/70 p-5 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/60">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-300">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border bg-white/80 px-3 py-2 outline-none ring-offset-2 transition placeholder:text-zinc-400 focus:ring-2 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900/60"
-            />
+        {/* Security */}
+        <div className="rounded-2xl border bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-6 flex items-center gap-3 border-b border-zinc-100 pb-4 dark:border-zinc-800">
+            <div className="rounded-full bg-indigo-100 p-2 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Security</h2>
+              <p className="text-xs text-zinc-500">Manage app lock and PIN.</p>
+            </div>
           </div>
-          <div>
-            <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-300">Email</label>
-            <input disabled value={email} className="w-full cursor-not-allowed rounded-xl border bg-zinc-100/70 px-3 py-2 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800/60" />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm text-zinc-600 dark:text-zinc-300">Currency</label>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="w-full rounded-xl border bg-white/80 px-3 py-2 outline-none ring-offset-2 transition focus:ring-2 focus:ring-indigo-500 dark:border-zinc-700 dark:bg-zinc-900/60"
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
+          <SecuritySettings />
         </div>
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            onClick={onSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-indigo-500 disabled:opacity-50"
-          >
-            Save
-          </button>
-          {saved && <span className="text-sm text-emerald-600 dark:text-emerald-400">Saved</span>}
+
+        {/* Backup */}
+        <div className="rounded-2xl border bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-6 flex items-center gap-3 border-b border-zinc-100 pb-4 dark:border-zinc-800">
+            <div className="rounded-full bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <Database className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Backup & Restore</h2>
+              <p className="text-xs text-zinc-500">Secure your data locally or in the cloud.</p>
+            </div>
+          </div>
+          <BackupManager />
+        </div>
+
+        {/* Activity Log */}
+        <div className="rounded-2xl border bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-6 flex items-center gap-3 border-b border-zinc-100 pb-4 dark:border-zinc-800">
+            <div className="rounded-full bg-amber-100 p-2 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+              <Activity className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Activity Log</h2>
+              <p className="text-xs text-zinc-500">Track recent account activity.</p>
+            </div>
+          </div>
+          <ActivityLog />
         </div>
       </div>
     </main>

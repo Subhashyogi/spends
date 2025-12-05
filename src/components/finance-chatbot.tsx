@@ -1,0 +1,329 @@
+"use client";
+
+import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MessageSquare, X, Send, Bot, User, BarChart2, PieChart, TrendingUp } from "lucide-react";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { safeJson } from "@/lib/http";
+
+type Txn = {
+    _id: string;
+    type: "income" | "expense";
+    amount: number;
+    date: string;
+    category?: string;
+    description?: string;
+};
+
+type Message = {
+    id: string;
+    role: "user" | "bot";
+    text: string;
+    chart?: {
+        type: "line" | "bar";
+        data: any[];
+        title: string;
+    };
+    timestamp: Date;
+};
+
+export default function FinanceChatbot() {
+    const [isOpen, setIsOpen] = useState(false);
+    const [input, setInput] = useState("");
+    const [messages, setMessages] = useState<Message[]>([
+        {
+            id: "welcome",
+            role: "bot",
+            text: "Hi! I'm your AI Finance Assistant. Ask me about your spending, trends, or specific categories.",
+            timestamp: new Date(),
+        }
+    ]);
+    const [isTyping, setIsTyping] = useState(false);
+    const [transactions, setTransactions] = useState<Txn[]>([]);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isOpen && transactions.length === 0) {
+            (async () => {
+                try {
+                    const res = await fetch("/api/transactions?limit=2000");
+                    const json = await safeJson(res);
+                    if (json.ok) setTransactions(json.data.data || json.data);
+                } catch (e) {
+                    console.error(e);
+                }
+            })();
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, isTyping]);
+
+    const processQuery = async (query: string) => {
+        setIsTyping(true);
+        // Simulate AI thinking time
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        const lowerQuery = query.toLowerCase();
+        const now = new Date();
+        let responseText = "I'm not sure I understand. Try asking 'How much did I spend last week?' or 'Show me food expenses'.";
+        let chartData = null;
+        let chartType: "line" | "bar" | undefined = undefined;
+        let chartTitle = "";
+
+        // Helper to filter by date
+        const filterByDate = (days: number) => {
+            return transactions.filter(t => {
+                const d = new Date(t.date);
+                const diffTime = Math.abs(now.getTime() - d.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= days;
+            });
+        };
+
+        // INTENT: Total Spend
+        if (lowerQuery.includes("spend") || lowerQuery.includes("spent") || lowerQuery.includes("total")) {
+            let days = 30;
+            let period = "last 30 days";
+
+            if (lowerQuery.includes("week") || lowerQuery.includes("7 days")) {
+                days = 7;
+                period = "last 7 days";
+            } else if (lowerQuery.includes("today")) {
+                days = 1;
+                period = "today";
+            }
+
+            const filtered = filterByDate(days).filter(t => t.type === "expense");
+            const total = filtered.reduce((sum, t) => sum + t.amount, 0);
+
+            responseText = `You spent ₹${total.toLocaleString()} in the ${period}.`;
+
+            if (days > 1) {
+                // Generate daily breakdown for chart
+                const dailyData: Record<string, number> = {};
+                filtered.forEach(t => {
+                    const dateStr = new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                    dailyData[dateStr] = (dailyData[dateStr] || 0) + t.amount;
+                });
+
+                chartData = Object.entries(dailyData).map(([name, value]) => ({ name, value }));
+                chartType = "bar";
+                chartTitle = `Spending Trend (${period})`;
+            }
+        }
+
+        // INTENT: Biggest Expense / Category
+        else if (lowerQuery.includes("biggest") || lowerQuery.includes("highest") || lowerQuery.includes("top")) {
+            const expenses = transactions.filter(t => t.type === "expense");
+            const catTotals: Record<string, number> = {};
+            expenses.forEach(t => {
+                const cat = t.category || "Uncategorized";
+                catTotals[cat] = (catTotals[cat] || 0) + t.amount;
+            });
+
+            const sorted = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+            if (sorted.length > 0) {
+                const [topCat, topAmount] = sorted[0];
+                responseText = `Your biggest expense category is **${topCat}** with ₹${topAmount.toLocaleString()} spent overall.`;
+
+                // Top 5 Chart
+                chartData = sorted.slice(0, 5).map(([name, value]) => ({ name, value }));
+                chartType = "bar";
+                chartTitle = "Top 5 Categories";
+            } else {
+                responseText = "You don't have enough expense data yet.";
+            }
+        }
+
+        // INTENT: Specific Category Chart
+        else if (lowerQuery.includes("chart") || lowerQuery.includes("graph") || lowerQuery.includes("show me")) {
+            // Extract potential category
+            const categories = Array.from(new Set(transactions.map(t => t.category?.toLowerCase()).filter(Boolean)));
+            const foundCat = categories.find(c => lowerQuery.includes(c!));
+
+            if (foundCat) {
+                const catExpenses = transactions.filter(t => t.type === "expense" && t.category?.toLowerCase() === foundCat);
+                const total = catExpenses.reduce((sum, t) => sum + t.amount, 0);
+
+                if (catExpenses.length > 0) {
+                    responseText = `Here is your spending chart for **${foundCat}**. Total: ₹${total.toLocaleString()}.`;
+
+                    // Group by date
+                    const dailyData: Record<string, number> = {};
+                    catExpenses.forEach(t => {
+                        const dateStr = new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        dailyData[dateStr] = (dailyData[dateStr] || 0) + t.amount;
+                    });
+
+                    chartData = Object.entries(dailyData).map(([name, value]) => ({ name, value }));
+                    chartType = "line";
+                    chartTitle = `${foundCat} Expenses`;
+                } else {
+                    responseText = `I couldn't find any expenses for ${foundCat}.`;
+                }
+            }
+        }
+
+        const newMessage: Message = {
+            id: Date.now().toString(),
+            role: "bot",
+            text: responseText,
+            chart: chartData ? { type: chartType!, data: chartData, title: chartTitle } : undefined,
+            timestamp: new Date(),
+        };
+
+        setMessages(prev => [...prev, newMessage]);
+        setIsTyping(false);
+    };
+
+    const handleSend = (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!input.trim()) return;
+
+        const userMsg: Message = {
+            id: Date.now().toString(),
+            role: "user",
+            text: input,
+            timestamp: new Date(),
+        };
+
+        setMessages(prev => [...prev, userMsg]);
+        const query = input;
+        setInput("");
+        processQuery(query);
+    };
+
+    return (
+        <>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        className="fixed bottom-24 right-6 z-50 flex h-[500px] max-h-[calc(100vh-8rem)] w-[350px] flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/90"
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-zinc-100 bg-white/50 p-4 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/50">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
+                                    <Bot className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-zinc-900 dark:text-zinc-100">Finance AI</h3>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="relative flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                        </span>
+                                        <span className="text-[10px] font-medium text-zinc-500">Online</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="cursor-pointer rounded-full p-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800">
+                            {messages.map((msg) => (
+                                <div
+                                    key={msg.id}
+                                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                                >
+                                    <div
+                                        className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.role === "user"
+                                            ? "bg-indigo-600 text-white rounded-tr-none"
+                                            : "bg-white text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 rounded-tl-none border border-zinc-100 dark:border-zinc-700"
+                                            }`}
+                                    >
+                                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+
+                                        {msg.chart && (
+                                            <div className="mt-4 h-40 w-full rounded-xl bg-white/50 p-2 dark:bg-zinc-900/50">
+                                                <div className="mb-2 text-[10px] font-medium uppercase tracking-wider opacity-70">{msg.chart.title}</div>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    {msg.chart.type === "line" ? (
+                                                        <AreaChart data={msg.chart.data}>
+                                                            <defs>
+                                                                <linearGradient id={`grad-${msg.id}`} x1="0" y1="0" x2="0" y2="1">
+                                                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                                                </linearGradient>
+                                                            </defs>
+                                                            <Area type="monotone" dataKey="value" stroke="#6366f1" fill={`url(#grad-${msg.id})`} strokeWidth={2} />
+                                                            <Tooltip
+                                                                contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                                                                formatter={(val: number) => `₹${val}`}
+                                                            />
+                                                        </AreaChart>
+                                                    ) : (
+                                                        <BarChart data={msg.chart.data}>
+                                                            <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                                            <Tooltip
+                                                                cursor={{ fill: 'transparent' }}
+                                                                contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                                                                formatter={(val: number) => `₹${val}`}
+                                                            />
+                                                        </BarChart>
+                                                    )}
+                                                </ResponsiveContainer>
+                                            </div>
+                                        )}
+
+                                        <div className={`mt-1 text-[10px] ${msg.role === "user" ? "text-indigo-200" : "text-zinc-400"}`}>
+                                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {isTyping && (
+                                <div className="flex justify-start">
+                                    <div className="flex items-center gap-1 rounded-2xl rounded-tl-none border border-zinc-100 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                        <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]"></span>
+                                        <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]"></span>
+                                        <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400"></span>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Input Area */}
+                        <form onSubmit={handleSend} className="border-t border-zinc-100 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder="Ask about your spending..."
+                                    className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-3 pl-4 pr-12 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!input.trim() || isTyping}
+                                    className="absolute right-2 rounded-full bg-indigo-600 p-2 text-white transition hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600"
+                                >
+                                    <Send className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </form>
+                    </motion.div>
+                )}
+            </AnimatePresence >
+
+            <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsOpen(!isOpen)}
+                className="fixed bottom-6 right-6 z-50 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 transition hover:bg-indigo-500"
+            >
+                {isOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
+            </motion.button>
+        </>
+    );
+}

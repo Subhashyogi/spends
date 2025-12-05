@@ -28,6 +28,20 @@ export async function GET(req: Request) {
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       { $unwind: "$transactions" },
     ];
+
+    // Check for partner
+    const user = await User.findById(userId);
+    if (user.partnerId) {
+      // If partner exists, we need to match either my ID or partner's ID
+      // But aggregate starts with a match on _id. 
+      // We can't easily merge two aggregations in one pipeline starting from User collection unless we match both users.
+      pipeline[0] = {
+        $match: {
+          _id: { $in: [new mongoose.Types.ObjectId(userId), user.partnerId] }
+        }
+      };
+    }
+
     if (Object.keys(matchInner).length) {
       pipeline.push({ $match: { "transactions.date": matchInner.date } });
     }

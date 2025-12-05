@@ -7,6 +7,11 @@ export const transactionCreateSchema = z.object({
   category: z.string().max(100).optional(),
   account: z.string().min(1).max(50).optional(),
   date: z.coerce.date().optional(),
+  isRecurring: z.boolean().optional(),
+  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']).optional(),
+  nextDueDate: z.coerce.date().optional(),
+  currency: z.string().length(3).optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 export const transactionUpdateSchema = transactionCreateSchema.partial();

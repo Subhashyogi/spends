@@ -4,6 +4,7 @@ import { transactionUpdateSchema } from '../../../../lib/validation';
 import mongoose from 'mongoose';
 import { requireUser } from '../../../../lib/auth-helpers';
 import User from '../../../../models/User';
+import ActivityLog from '../../../../models/ActivityLog';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -81,7 +82,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     }
 
     const update: any = { 'transactions.$[t].updatedAt': new Date() };
-    for (const k of ['type','amount','description','category','account','date'] as const) {
+    for (const k of ['type', 'amount', 'description', 'category', 'account', 'date'] as const) {
       if ((parsed.data as any)[k] !== undefined) update[`transactions.$[t].${k}`] = (parsed.data as any)[k];
     }
     await User.updateOne(
@@ -97,6 +98,15 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
       { $replaceRoot: { newRoot: '$transactions' } },
       { $limit: 1 },
     ]);
+
+    // Log activity
+    await ActivityLog.create({
+      userId,
+      action: 'UPDATE',
+      entity: 'TRANSACTION',
+      details: `Updated transaction of ${outRows[0].amount}`,
+    });
+
     return NextResponse.json({ data: outRows[0] });
   } catch (err: any) {
     return NextResponse.json(
@@ -117,6 +127,15 @@ export async function DELETE(_req: Request, context: { params: Promise<{ id: str
     const txId = new mongoose.Types.ObjectId(id);
     const result = await User.updateOne({ _id: new mongoose.Types.ObjectId(userId) }, { $pull: { transactions: { _id: txId } } }).exec();
     if (!result.modifiedCount) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+    // Log activity
+    await ActivityLog.create({
+      userId,
+      action: 'DELETE',
+      entity: 'TRANSACTION',
+      details: `Deleted transaction`,
+    });
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json(

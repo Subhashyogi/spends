@@ -13,6 +13,8 @@ type Budget = {
   spent?: number;
   usedPct?: number; // 0-100
   status?: "ok" | "warning" | "over";
+  rollover?: number;
+  effectiveAmount?: number;
 };
 
 function currentMonth(): string {
@@ -53,13 +55,17 @@ export default function BudgetsOverview() {
   const totalBudget = useMemo(() => items.find((b) => !b.category), [items]);
   const totalExpense = useMemo(() => totalBudget?.spent ?? 0, [totalBudget]);
   const totalAmount = useMemo(() => totalBudget?.amount ?? 0, [totalBudget]);
-  const totalPct = useMemo(() => (totalAmount > 0 ? Math.min(100, Math.round((totalExpense / totalAmount) * 100)) : 0), [totalAmount, totalExpense]);
+  const totalEffective = useMemo(() => totalBudget?.effectiveAmount ?? totalAmount, [totalBudget, totalAmount]);
+  const totalRollover = useMemo(() => totalBudget?.rollover ?? 0, [totalBudget]);
+
+  const totalPct = useMemo(() => (totalEffective > 0 ? Math.min(100, Math.round((totalExpense / totalEffective) * 100)) : 0), [totalEffective, totalExpense]);
+
   const totalStatus: "ok" | "warning" | "over" = useMemo(() => {
-    if (totalAmount <= 0) return "ok";
-    if (totalExpense >= totalAmount) return "over";
+    if (totalEffective <= 0) return "ok";
+    if (totalExpense >= totalEffective) return "over";
     if (totalPct >= 90) return "warning";
     return "ok";
-  }, [totalAmount, totalExpense, totalPct]);
+  }, [totalEffective, totalExpense, totalPct]);
 
   const categoryBudgets = useMemo(() => items.filter((b) => !!b.category), [items]);
 
@@ -84,12 +90,19 @@ export default function BudgetsOverview() {
       {/* Total Budget */}
       <div className="mb-4 rounded-xl border p-4 dark:border-zinc-800">
         <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Total Expense</div>
+          <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+            Total Expense
+            {totalRollover !== 0 && (
+              <span className={`ml-2 text-xs ${totalRollover > 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                {totalRollover > 0 ? "+" : ""}{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalRollover)} rollover
+              </span>
+            )}
+          </div>
           {totalBudget ? (
             <div className="text-xs text-zinc-500">
               {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalExpense)}
               {" / "}
-              {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalAmount)}
+              {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(totalEffective)}
               {` (${totalPct}%)`}
             </div>
           ) : (
@@ -114,16 +127,26 @@ export default function BudgetsOverview() {
         )}
         {categoryBudgets.map((b) => {
           const spent = b.spent ?? 0;
-          const usedPct = b.usedPct ?? (b.amount > 0 ? Math.min(100, Math.round((spent / b.amount) * 100)) : 0);
-          const status = b.status ?? (spent >= b.amount ? "over" : usedPct >= 90 ? "warning" : "ok");
+          const effective = b.effectiveAmount ?? b.amount;
+          const rollover = b.rollover ?? 0;
+          const usedPct = b.usedPct ?? (effective > 0 ? Math.min(100, Math.round((spent / effective) * 100)) : 0);
+          const status = b.status ?? (spent >= effective ? "over" : usedPct >= 90 ? "warning" : "ok");
+
           return (
             <div key={b._id} className="rounded-xl border p-3 dark:border-zinc-800">
               <div className="mb-1 flex items-center justify-between">
-                <div className="text-sm text-zinc-700 dark:text-zinc-200">{b.category || "All"}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm text-zinc-700 dark:text-zinc-200">{b.category || "All"}</div>
+                  {rollover !== 0 && (
+                    <span className={`text-[10px] ${rollover > 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                      {rollover > 0 ? "+" : ""}{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(rollover)}
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-zinc-500">
                   {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(spent)}
                   {" / "}
-                  {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(b.amount)}
+                  {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(effective)}
                   {` (${usedPct}%)`}
                 </div>
               </div>

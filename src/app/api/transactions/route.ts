@@ -3,6 +3,7 @@ import connectToDatabase from '../../../lib/db';
 import { transactionCreateSchema } from '../../../lib/validation';
 import { requireUser } from '../../../lib/auth-helpers';
 import User from '../../../models/User';
+import ActivityLog from '../../../models/ActivityLog';
 import mongoose from 'mongoose';
 
 export const revalidate = 0;
@@ -41,8 +42,29 @@ export async function GET(req: Request) {
       { $unwind: '$transactions' },
       Object.keys(match).length ? { $match: match } : undefined,
       { $replaceRoot: { newRoot: '$transactions' } },
-      { $sort: { date: -1, createdAt: -1 } },
+      { $addFields: { user: 'Me' } }, // Mark as mine
+      { $sort: { date: -1 } }
     ].filter(Boolean);
+
+    // Check for partner
+    const user = await User.findById(userId);
+    if (user.partnerId) {
+      const partnerPipeline: any[] = [
+        { $match: { _id: user.partnerId } },
+        { $unwind: '$transactions' },
+        Object.keys(match).length ? { $match: match } : undefined,
+        { $replaceRoot: { newRoot: '$transactions' } },
+        { $addFields: { user: 'Partner' } } // Mark as partner's
+      ].filter(Boolean);
+
+      const [myTx, partnerTx] = await Promise.all([
+        User.aggregate(pipeline),
+        User.aggregate(partnerPipeline)
+      ]);
+
+      const allTx = [...myTx, ...partnerTx].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return NextResponse.json({ data: allTx });
+    }
 
     const data = await User.aggregate(pipeline);
     return NextResponse.json({ data });
@@ -88,14 +110,48 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
+    let amount = parsed.data.amount;
+    let originalAmount = undefined;
+    let originalCurrency = undefined;
+    let exchangeRate = undefined;
+
+    if (parsed.data.currency && parsed.data.currency.toUpperCase() !== 'INR') {
+      try {
+        const from = parsed.data.currency.toUpperCase();
+        const res = await fetch(`https://api.exchangerate-api.com/v4/latest/${from}`);
+        const data = await res.json();
+        const rate = data.rates['INR'];
+
+        if (rate) {
+          originalAmount = amount;
+          originalCurrency = from;
+          exchangeRate = rate;
+          amount = amount * rate;
+        }
+      } catch (e) {
+        console.error("Failed to convert currency", e);
+        // Fallback: keep original amount but mark it (or we could fail)
+        // For now, we'll just store as is but maybe we should have a fallback rate?
+        // Let's assume 1:1 if fail, but log it. 
+        // Actually, better to store original details even if rate is 1? 
+        // No, let's just proceed with amount as is if fetch fails, effectively 1:1.
+      }
+    }
+
     const snapshot: any = {
       _id: new mongoose.Types.ObjectId(),
       type: parsed.data.type,
-      amount: parsed.data.amount,
+      amount: amount,
       description: parsed.data.description,
       category: parsed.data.category,
       account: parsed.data.account,
       date: parsed.data.date ?? now,
+      originalAmount,
+      originalCurrency,
+      exchangeRate,
+      isRecurring: parsed.data.isRecurring || false,
+      frequency: parsed.data.frequency,
+      tags: parsed.data.tags || [],
       createdAt: now,
       updatedAt: now,
     };
@@ -104,6 +160,15 @@ export async function POST(req: Request) {
       { _id: new mongoose.Types.ObjectId(userId) },
       { $push: { transactions: snapshot }, $addToSet: { accounts: snapshot.account } }
     ).exec();
+
+    // Log activity
+    await ActivityLog.create({
+      userId,
+      action: 'CREATE',
+      entity: 'TRANSACTION',
+      details: `Created ${snapshot.type} of ${snapshot.amount} for ${snapshot.category}`,
+    });
+
     return NextResponse.json({ data: snapshot }, { status: 201 });
   } catch (err: any) {
     const status = Number.isInteger(err?.status) ? err.status : 500;

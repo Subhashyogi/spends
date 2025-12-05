@@ -17,12 +17,34 @@ function monthRange(month: string) {
   return { start, end };
 }
 
-async function attachUsage(userId: string, budgets: any[]) {
+// Helper to get previous month string "YYYY-MM"
+function getPreviousMonth(month: string) {
+  const [y, m] = month.split('-').map((x) => parseInt(x, 10));
+  const date = new Date(Date.UTC(y, m - 1 - 1, 1)); // Subtract 1 month
+  const py = date.getUTCFullYear();
+  const pm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${py}-${pm}`;
+}
+
+async function attachUsage(userId: string, budgets: any[], month: string) {
+  const prevMonth = getPreviousMonth(month);
+
+  // Fetch previous month's budgets to calculate rollover
+  const prevBudgetsRaw = await User.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+    { $unwind: '$budgets' },
+    { $match: { 'budgets.month': prevMonth } },
+    { $replaceRoot: { newRoot: '$budgets' } },
+  ]);
+
   const withUsage = [] as any[];
+
   for (const b of budgets) {
+    // 1. Current Month Usage
     const { start, end } = monthRange(b.month);
     const matchInner: any = { 'transactions.type': 'expense', 'transactions.date': { $gte: start, $lte: end } };
     if (b.category) matchInner['transactions.category'] = b.category;
+
     const agg = await User.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       { $unwind: '$transactions' },
@@ -30,9 +52,32 @@ async function attachUsage(userId: string, budgets: any[]) {
       { $group: { _id: null, total: { $sum: '$transactions.amount' } } },
     ]);
     const spent = agg[0]?.total ?? 0;
-    const usedPct = b.amount > 0 ? Math.min(100, Math.round((spent / b.amount) * 100)) : 0;
-    const status = spent >= b.amount ? 'over' : usedPct >= 80 ? 'warning' : 'ok';
-    withUsage.push({ ...b.toObject?.() ?? b, spent, usedPct, status });
+
+    // 2. Calculate Rollover from Previous Month
+    let rollover = 0;
+    const prevBudget = prevBudgetsRaw.find((pb: any) => pb.category === b.category);
+
+    if (prevBudget) {
+      const { start: pStart, end: pEnd } = monthRange(prevMonth);
+      const pMatchInner: any = { 'transactions.type': 'expense', 'transactions.date': { $gte: pStart, $lte: pEnd } };
+      if (prevBudget.category) pMatchInner['transactions.category'] = prevBudget.category;
+
+      const pAgg = await User.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+        { $unwind: '$transactions' },
+        { $match: pMatchInner },
+        { $group: { _id: null, total: { $sum: '$transactions.amount' } } },
+      ]);
+      const pSpent = pAgg[0]?.total ?? 0;
+      rollover = prevBudget.amount - pSpent;
+    }
+
+    // 3. Calculate Effective Amount and Status
+    const effectiveAmount = Math.max(0, b.amount + rollover);
+    const usedPct = effectiveAmount > 0 ? Math.min(100, Math.round((spent / effectiveAmount) * 100)) : (spent > 0 ? 100 : 0);
+    const status = spent >= effectiveAmount ? 'over' : usedPct >= 80 ? 'warning' : 'ok';
+
+    withUsage.push({ ...b.toObject?.() ?? b, spent, usedPct, status, rollover, effectiveAmount });
   }
   return withUsage;
 }
@@ -43,6 +88,11 @@ export async function GET(req: Request) {
     const userId = await requireUser();
     const { searchParams } = new URL(req.url);
     const month = searchParams.get('month');
+
+    if (!month) {
+      return NextResponse.json({ error: 'Month is required' }, { status: 400 });
+    }
+
     const pipeline: any[] = [
       { $match: { _id: new mongoose.Types.ObjectId(userId) } },
       { $unwind: '$budgets' },
@@ -53,7 +103,7 @@ export async function GET(req: Request) {
       { $sort: { month: -1, category: 1 } },
     );
     const data = await User.aggregate(pipeline);
-    const out = await attachUsage(userId, data);
+    const out = await attachUsage(userId, data, month);
     return NextResponse.json({ data: out });
   } catch (err: any) {
     const status = Number.isInteger(err?.status) ? err.status : 500;
@@ -94,7 +144,7 @@ export async function POST(req: Request) {
     if (!result.modifiedCount) {
       return NextResponse.json({ error: 'Failed to add budget' }, { status: 500 });
     }
-    const [withUsage] = await attachUsage(userId, [snapshot]);
+    const [withUsage] = await attachUsage(userId, [snapshot], month);
     return NextResponse.json({ data: withUsage ?? snapshot }, { status: 201 });
   } catch (err: any) {
     const status = Number.isInteger(err?.status) ? err.status : 500;

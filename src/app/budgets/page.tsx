@@ -7,6 +7,8 @@ import { getLucideIcon, type LucideIconName } from "@/lib/icons";
 import { Check, PencilLine, Plus, Trash2, X, AlertTriangle } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
+import GoalsCard from "@/components/goals-card";
+import RulesManager from "@/components/rules-manager";
 
 function currentMonth(): string {
   const d = new Date();
@@ -78,7 +80,7 @@ export default function BudgetsPage() {
         const res = await fetch("/api/categories", { cache: "no-store" });
         const { ok, data } = await safeJson(res);
         if (ok) setCategories((data.data || data).filter((c: Cat) => c.type === "expense"));
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -195,7 +197,7 @@ export default function BudgetsPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border bg-white/70 p-5 shadow-sm backdrop-blur dark:bg-zinc-900/60">
         <h3 className="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-200">Add Budget</h3>
         {error && <div className="mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-sm text-rose-600 dark:text-rose-400">{error}</div>}
-        <div className="grid gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
           <input
             value={newAmount}
             onChange={(e) => setNewAmount(e.target.value)}
@@ -312,6 +314,11 @@ export default function BudgetsPage() {
           {loading && <div className="py-3 text-xs text-zinc-500">Loading…</div>}
           {!loading && rows.length === 0 && <div className="py-3 text-xs text-zinc-500">No budgets for this month.</div>}
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <GoalsCard />
+        <RulesManager />
       </div>
     </main>
   );

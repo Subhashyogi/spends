@@ -13,6 +13,8 @@ export default function InsightsCard() {
   const [thisMonthIncomeToDate, setThisMonthIncomeToDate] = useState<number>(0);
   const [thisMonthExpenseToDate, setThisMonthExpenseToDate] = useState<number>(0);
   const [biggestCat, setBiggestCat] = useState<{ category: string; total: number } | null>(null);
+  const [unusualSpending, setUnusualSpending] = useState<{ description: string; amount: number } | null>(null);
+  const [spikeCat, setSpikeCat] = useState<{ category: string; pct: number } | null>(null);
 
   function monthRange(year: number, monthIndex: number) {
     const start = new Date(year, monthIndex, 1, 0, 0, 0, 0);
@@ -34,22 +36,58 @@ export default function InsightsCard() {
         const sres = await fetch("/api/user/settings", { cache: "no-store" });
         const sj = await safeJson(sres);
         if (sj.ok && sj.data?.currency) setCurrency(sj.data.currency);
-      } catch {}
+      } catch { }
 
       // This month (full) expense and last month expense
-      const [curSum, prevSum, byCat] = await Promise.all([
+      const results = await Promise.all([
         fetch(`/api/summary?from=${encodeURIComponent(thisFrom)}&to=${encodeURIComponent(thisToFull)}`),
         fetch(`/api/summary?from=${encodeURIComponent(lastFrom)}&to=${encodeURIComponent(lastTo)}`),
         fetch(`/api/analytics/by-category?from=${encodeURIComponent(thisFrom)}&to=${encodeURIComponent(thisToFull)}`),
+        fetch(`/api/analytics/by-category?from=${encodeURIComponent(lastFrom)}&to=${encodeURIComponent(lastTo)}`),
+        fetch(`/api/transactions?type=expense&from=${encodeURIComponent(thisFrom)}&to=${encodeURIComponent(thisToFull)}`),
       ]);
+      const curSum = results[0];
+      const prevSum = results[1];
+      const byCat = results[2];
       const curJ = await safeJson(curSum);
       const prevJ = await safeJson(prevSum);
       const byCatJ = await safeJson(byCat);
+      const prevByCatJ = await safeJson(results[3]);
+      const txJ = await safeJson(results[4]);
       if (curJ.ok) setThisMonthExpense(curJ.data?.expenseTotal ?? 0);
       if (prevJ.ok) setLastMonthExpense(prevJ.data?.expenseTotal ?? 0);
       if (byCatJ.ok) {
         const arr = (byCatJ.data?.data || byCatJ.data) as Array<{ category: string; total: number }>;
         setBiggestCat(arr && arr.length ? arr[0] : null);
+
+        // Detect spikes
+        if (prevByCatJ.ok) {
+          const prevArr = (prevByCatJ.data?.data || prevByCatJ.data) as Array<{ category: string; total: number }>;
+          const spikes = arr.map(c => {
+            const prev = prevArr.find(p => p.category === c.category);
+            if (!prev || prev.total < 100) return null; // Ignore small previous base
+            const pct = ((c.total - prev.total) / prev.total) * 100;
+            return { ...c, pct };
+          }).filter(c => c && c.pct > 50).sort((a, b) => (b?.pct || 0) - (a?.pct || 0));
+
+          if (spikes.length > 0 && spikes[0]) {
+            setSpikeCat({ category: spikes[0].category, pct: Math.round(spikes[0].pct) });
+          }
+        }
+      }
+
+      // Detect unusual spending
+      if (txJ.ok) {
+        const txs = (txJ.data?.data || txJ.data) as Array<{ description: string; amount: number }>;
+        if (txs.length > 5) {
+          const total = txs.reduce((sum, t) => sum + t.amount, 0);
+          const avg = total / txs.length;
+          // Flag if > 2.5x average
+          const unusual = txs.find(t => t.amount > avg * 2.5);
+          if (unusual) {
+            setUnusualSpending({ description: unusual.description, amount: unusual.amount });
+          }
+        }
       }
 
       // This month to-date for pace projection
@@ -100,7 +138,17 @@ export default function InsightsCard() {
     return `At this pace, you may save ${fmt(projected)} by month end.`;
   }, [thisMonthIncomeToDate, thisMonthExpenseToDate, currency]);
 
-  const lines = [monthOverMonth, biggestCatLine, paceLine].filter(Boolean) as string[];
+  const unusualLine = useMemo(() => {
+    if (!unusualSpending) return null;
+    return `Unusual spending detected: ${unusualSpending.description} (${fmt(unusualSpending.amount)}).`;
+  }, [unusualSpending, currency]);
+
+  const spikeLine = useMemo(() => {
+    if (!spikeCat) return null;
+    return `Spending on ${spikeCat.category} is up ${spikeCat.pct}% compared to last month.`;
+  }, [spikeCat]);
+
+  const lines = [monthOverMonth, biggestCatLine, paceLine, unusualLine, spikeLine].filter(Boolean) as string[];
 
   return (
     <motion.div
