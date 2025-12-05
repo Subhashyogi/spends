@@ -4,6 +4,19 @@ import bcrypt from "bcryptjs";
 import connectToDatabase from "@/lib/db";
 import User from "@/models/User";
 
+// Ensure NEXTAUTH_URL is set in serverless environments (Netlify/Vercel) if missing
+(() => {
+  if (!process.env.NEXTAUTH_URL) {
+    const fromNetlify = process.env.URL || process.env.DEPLOY_PRIME_URL; // Netlify
+    const fromVercel = process.env.VERCEL_URL; // Vercel (domain only)
+    const raw = fromNetlify || fromVercel;
+    if (raw) {
+      const url = raw.startsWith("http") ? raw : `https://${raw}`;
+      process.env.NEXTAUTH_URL = url;
+    }
+  }
+})();
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET || "dev_secret_change_me",
@@ -35,6 +48,14 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = (token as any).id as string;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      try {
+        const u = new URL(url, baseUrl);
+        return u.toString();
+      } catch {
+        return baseUrl;
+      }
     },
   },
 };

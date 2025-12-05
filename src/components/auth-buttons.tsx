@@ -25,7 +25,7 @@ export default function AuthButtons() {
   if (!data?.user) {
     return (
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="secondary" onClick={() => signIn()}>Sign in</Button>
+        <Button size="sm" variant="secondary" onClick={() => signIn(undefined, { callbackUrl: "/" })}>Sign in</Button>
         <a href="/register" className="inline-flex h-8 items-center justify-center rounded-xl bg-indigo-600 px-3 text-xs font-medium text-white hover:bg-indigo-500">Register</a>
       </div>
     );
