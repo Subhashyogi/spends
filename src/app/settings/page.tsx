@@ -4,12 +4,14 @@ import Link from "next/link";
 import BackupManager from "@/components/backup-manager";
 import ActivityLog from "@/components/activity-log";
 import SecuritySettings from "@/components/security-settings";
+import TwoFactorSetup from "@/components/two-factor-setup";
+import DeviceList from "@/components/device-list";
 import { ArrowLeft, Shield, Database, Activity } from "lucide-react";
 
 export default function SettingsPage() {
   return (
-    <main className="min-h-screen space-y-8 bg-zinc-50 p-4 dark:bg-black sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-8">
+    <main className="min-h-screen space-y-8 bg-zinc-50 p-4 dark:bg-transparent sm:p-8">
+      <div className="mx-auto w-full space-y-8">
         {/* Header */}
         <div className="space-y-1">
           <Link
@@ -30,10 +32,18 @@ export default function SettingsPage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Security</h2>
-              <p className="text-xs text-zinc-500">Manage app lock and PIN.</p>
+              <p className="text-xs text-zinc-500">Manage 2FA, devices, and app lock.</p>
             </div>
           </div>
-          <SecuritySettings />
+          <div className="space-y-8">
+            <SecuritySettings />
+            <div className="border-t border-zinc-100 pt-8 dark:border-zinc-800">
+              <TwoFactorSetup />
+            </div>
+            <div className="border-t border-zinc-100 pt-8 dark:border-zinc-800">
+              <DeviceList />
+            </div>
+          </div>
         </div>
 
         {/* Backup */}

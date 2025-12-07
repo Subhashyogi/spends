@@ -19,6 +19,7 @@ export async function GET(req: Request) {
             hasPin: !!user?.appPin
         });
     } catch (err: any) {
+        console.error("PIN API Error:", err);
         return NextResponse.json({ error: 'Error fetching PIN status' }, { status: 500 });
     }
 }

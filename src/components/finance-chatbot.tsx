@@ -27,8 +27,8 @@ type Message = {
     timestamp: Date;
 };
 
-export default function FinanceChatbot() {
-    const [isOpen, setIsOpen] = useState(false);
+export default function FinanceChatbot({ embedded = false, className = "" }: { embedded?: boolean; className?: string }) {
+    const [isOpen, setIsOpen] = useState(embedded);
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -43,6 +43,10 @@ export default function FinanceChatbot() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (embedded) setIsOpen(true);
+    }, [embedded]);
+
+    useEffect(() => {
         if (isOpen && transactions.length === 0) {
             (async () => {
                 try {
@@ -54,7 +58,7 @@ export default function FinanceChatbot() {
                 }
             })();
         }
-    }, [isOpen]);
+    }, [isOpen, transactions.length]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -194,6 +198,115 @@ export default function FinanceChatbot() {
         setInput("");
         processQuery(query);
     };
+
+    if (embedded) {
+        return (
+            <div className={`flex h-full w-full flex-col overflow-hidden bg-white dark:bg-zinc-900 ${className || 'rounded-3xl border border-zinc-200 dark:border-zinc-800'}`}>
+                {/* Header (Simplified for embedded) */}
+                <div className="flex items-center justify-between border-b border-zinc-100 bg-white/50 p-4 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/50">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
+                            <Bot className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-zinc-900 dark:text-zinc-100">Finance AI</h3>
+                            <div className="flex items-center gap-1.5">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span className="text-[10px] font-medium text-zinc-500">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800">
+                    {messages.map((msg) => (
+                        <div
+                            key={msg.id}
+                            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                            <div
+                                className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.role === "user"
+                                    ? "bg-indigo-600 text-white rounded-tr-none"
+                                    : "bg-white text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 rounded-tl-none border border-zinc-100 dark:border-zinc-700"
+                                    }`}
+                            >
+                                <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+
+                                {msg.chart && (
+                                    <div className="mt-4 h-40 w-full rounded-xl bg-white/50 p-2 dark:bg-zinc-900/50">
+                                        <div className="mb-2 text-[10px] font-medium uppercase tracking-wider opacity-70">{msg.chart.title}</div>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            {msg.chart.type === "line" ? (
+                                                <AreaChart data={msg.chart.data}>
+                                                    <defs>
+                                                        <linearGradient id={`grad-${msg.id}`} x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <Area type="monotone" dataKey="value" stroke="#6366f1" fill={`url(#grad-${msg.id})`} strokeWidth={2} />
+                                                    <Tooltip
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                                                        formatter={(val: number) => `₹${val}`}
+                                                    />
+                                                </AreaChart>
+                                            ) : (
+                                                <BarChart data={msg.chart.data}>
+                                                    <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                                    <Tooltip
+                                                        cursor={{ fill: 'transparent' }}
+                                                        contentStyle={{ borderRadius: '8px', border: 'none', fontSize: '12px' }}
+                                                        formatter={(val: number) => `₹${val}`}
+                                                    />
+                                                </BarChart>
+                                            )}
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
+
+                                <div className={`mt-1 text-[10px] ${msg.role === "user" ? "text-indigo-200" : "text-zinc-400"}`}>
+                                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {isTyping && (
+                        <div className="flex justify-start">
+                            <div className="flex items-center gap-1 rounded-2xl rounded-tl-none border border-zinc-100 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]"></span>
+                                <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]"></span>
+                                <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400"></span>
+                            </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input Area */}
+                <form onSubmit={handleSend} className="border-t border-zinc-100 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="relative flex items-center">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder="Ask about your spending..."
+                            className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-3 pl-4 pr-12 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!input.trim() || isTyping}
+                            className="absolute right-2 rounded-full bg-indigo-600 p-2 text-white transition hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600"
+                        >
+                            <Send className="h-4 w-4" />
+                        </button>
+                    </div>
+                </form>
+            </div>
+        );
+    }
 
     return (
         <>

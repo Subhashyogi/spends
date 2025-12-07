@@ -12,8 +12,9 @@ export default function SecuritySettings() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [mode, setMode] = useState<'view' | 'set'>('view');
+    const [step, setStep] = useState<'verify' | 'set'>('set');
 
-    async function handleSetPin(e: React.FormEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (pin.length !== 4) {
             setError("PIN must be 4 digits");
@@ -22,21 +23,40 @@ export default function SecuritySettings() {
 
         setLoading(true);
         setError(null);
+
         try {
-            const res = await fetch("/api/user/pin", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pin })
-            });
-            const { ok, data } = await safeJson(res);
+            if (step === 'verify') {
+                // Verify old PIN
+                const res = await fetch("/api/user/pin", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pin })
+                });
+                const { ok, data } = await safeJson(res);
 
-            if (!ok) throw new Error(data?.error || "Failed to set PIN");
+                if (!ok) throw new Error(data?.error || "Incorrect PIN");
 
-            setSuccess(true);
-            setPin("");
-            setMode('view');
-            refreshLockStatus();
-            setTimeout(() => setSuccess(false), 2000);
+                setStep('set');
+                setPin("");
+                setSuccess(true);
+                setTimeout(() => setSuccess(false), 1000);
+            } else {
+                // Set new PIN
+                const res = await fetch("/api/user/pin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pin })
+                });
+                const { ok, data } = await safeJson(res);
+
+                if (!ok) throw new Error(data?.error || "Failed to set PIN");
+
+                setSuccess(true);
+                setPin("");
+                setMode('view');
+                refreshLockStatus();
+                setTimeout(() => setSuccess(false), 2000);
+            }
         } catch (e: any) {
             setError(e.message);
         } finally {
@@ -58,6 +78,13 @@ export default function SecuritySettings() {
         } finally {
             setLoading(false);
         }
+    }
+
+    function startSetPin() {
+        setMode('set');
+        setStep(hasPin ? 'verify' : 'set');
+        setPin("");
+        setError(null);
     }
 
     return (
@@ -84,7 +111,7 @@ export default function SecuritySettings() {
                     {hasPin ? (
                         <div className="flex gap-2">
                             <button
-                                onClick={() => setMode('set')}
+                                onClick={startSetPin}
                                 className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                             >
                                 Change PIN
@@ -99,7 +126,7 @@ export default function SecuritySettings() {
                         </div>
                     ) : (
                         <button
-                            onClick={() => setMode('set')}
+                            onClick={startSetPin}
                             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
                         >
                             Setup PIN
@@ -108,9 +135,9 @@ export default function SecuritySettings() {
                 </div>
 
                 {mode === 'set' && (
-                    <form onSubmit={handleSetPin} className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-900/30 dark:bg-indigo-900/10">
+                    <form onSubmit={handleSubmit} className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-900/30 dark:bg-indigo-900/10">
                         <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                            Enter 4-digit PIN
+                            {step === 'verify' ? "Enter Current PIN" : "Enter New 4-digit PIN"}
                         </label>
                         <div className="flex gap-2">
                             <input
@@ -127,7 +154,7 @@ export default function SecuritySettings() {
                                 disabled={loading || pin.length !== 4}
                                 className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
                             >
-                                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save"}
+                                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (step === 'verify' ? "Verify" : "Save")}
                             </button>
                             <button
                                 type="button"
@@ -142,6 +169,7 @@ export default function SecuritySettings() {
                             </button>
                         </div>
                         {error && <p className="mt-2 text-xs text-rose-600 dark:text-rose-400">{error}</p>}
+                        {success && step === 'set' && <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">PIN verified! Enter new PIN.</p>}
                     </form>
                 )}
             </div>

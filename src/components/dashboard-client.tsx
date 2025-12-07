@@ -2,12 +2,9 @@
 
 import { useSession, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { Wallet, ArrowUpRight, ArrowDownRight, PieChart } from "lucide-react";
 import SummaryCards from "@/components/summary-cards";
 import InsightsCard from "@/components/insights-card";
 import FinanceChatbot from "@/components/finance-chatbot";
-
-
 
 import SplitDashboard from "@/components/split-dashboard";
 import FriendsManager from "@/components/friends-manager";
@@ -17,10 +14,10 @@ import ExpenseByCategory from "@/components/expense-by-category";
 import RecentTransactions from "@/components/recent-transactions";
 import BudgetProgress from "@/components/budget-progress";
 import AppLockProvider from "@/components/app-lock-provider";
+import WarrantyTracker from "@/components/warranty-tracker";
+import SubscriptionTracker from "@/components/subscription-tracker";
 
 import Button from "@/components/ui/button";
-import StatCard from "@/components/stat-card";
-import { formatCurrency } from "@/lib/utils";
 
 export default function DashboardClient() {
   const { data, status } = useSession();
@@ -35,9 +32,6 @@ export default function DashboardClient() {
 
   // Fetch data function (simplified for this context)
   const refreshData = async () => {
-    // In a real app, this would fetch from API
-    // For now, we rely on the components fetching their own data or global state
-    // But since we have props passed to some components, we need to fetch here
     try {
       const [txRes, budgetRes, catRes] = await Promise.all([
         fetch("/api/transactions"),
@@ -75,6 +69,20 @@ export default function DashboardClient() {
       return () => window.removeEventListener("transactionsUpdated", refreshData);
     }
   }, [user]);
+
+  // Trigger auto-backup on Sundays
+  useEffect(() => {
+    const today = new Date();
+    if (today.getDay() === 0) { // 0 is Sunday
+      fetch("/api/backup/auto", { method: "POST" })
+        .catch(err => console.error("Auto backup trigger failed", err));
+    }
+
+    // Check for monthly digest trigger
+    // The API handles the "last day of month" check
+    fetch("/api/cron/digest")
+      .catch(err => console.error("Digest trigger failed", err));
+  }, []);
 
   if (loading) {
     return (
@@ -115,77 +123,53 @@ export default function DashboardClient() {
 
   return (
     <AppLockProvider>
-      <div className="min-h-screen bg-zinc-50 pb-20 dark:bg-black relative overflow-hidden">
+      <div className="min-h-screen bg-zinc-50 pb-20 dark:bg-transparent relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 flex justify-center">
           <div className="h-[500px] w-[500px] rounded-full bg-indigo-500/10 blur-[100px] dark:bg-indigo-500/20" />
         </div>
-        <main className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <main className="relative mx-auto w-full px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-8">
             {/* Stats Overview */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                title="Total Balance"
-                value={formatCurrency(stats.totalIncome - stats.totalExpense)}
-                icon={Wallet}
-                trend="+2.5%"
-                trendUp={true}
-              />
-              <StatCard
-                title="Monthly Income"
-                value={formatCurrency(stats.totalIncome)}
-                icon={ArrowUpRight}
-                trend="+12%"
-                trendUp={true}
-              />
-              <StatCard
-                title="Monthly Expenses"
-                value={formatCurrency(stats.totalExpense)}
-                icon={ArrowDownRight}
-                trend="-5%"
-                trendUp={true}
-              />
-              <StatCard
-                title="Savings Rate"
-                value={`${stats.totalIncome > 0
-                  ? Math.round(
-                    ((stats.totalIncome - stats.totalExpense) /
-                      stats.totalIncome) *
-                    100
-                  )
-                  : 0
-                  }%`}
-                icon={PieChart}
-                trend="+2%"
-                trendUp={true}
-              />
-            </div>
+            <SummaryCards />
 
-            <div className="grid gap-8 lg:grid-cols-3">
-              {/* Main Content */}
-              <div className="lg:col-span-2 space-y-8">
-                <SpendingChart transactions={transactions} />
-                <RecentTransactions transactions={transactions} />
-              </div>
+            <InsightsCard />
 
-              {/* Sidebar */}
+            <div className="grid gap-8 lg:grid-cols-2">
+              {/* Left Column: Transaction Form */}
               <div className="space-y-8">
                 <TransactionForm
                   onTransactionAdded={refreshData}
                   categories={categories}
                 />
+              </div>
+
+              {/* Right Column: Chart & Trackers */}
+              <div className="space-y-8">
+                <SpendingChart transactions={transactions} />
+                <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  <WarrantyTracker transactions={transactions} />
+                  <SubscriptionTracker transactions={transactions} />
+                </div>
+              </div>
+            </div>
+
+            {/* Lower Section: Other components */}
+            <div className="grid gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-8">
+                <RecentTransactions transactions={transactions} />
+                <SplitDashboard />
+              </div>
+              <div className="space-y-8">
                 <BudgetProgress
                   budgets={budgets}
                   transactions={transactions}
                   categories={categories}
                 />
                 <ExpenseByCategory transactions={transactions} />
+                <FriendsManager />
               </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <SplitDashboard />
-              <FriendsManager />
-            </div>
             <FinanceChatbot />
           </div>
         </main>

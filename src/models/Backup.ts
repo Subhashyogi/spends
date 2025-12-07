@@ -10,6 +10,16 @@ const BackupSchema = new mongoose.Schema({
         type: String, // Encrypted base64 string
         required: true,
     },
+    backupType: {
+        type: String,
+        enum: ['manual', 'auto'],
+        default: 'manual',
+    },
+    encryptionMethod: {
+        type: String,
+        enum: ['user', 'system'],
+        default: 'user',
+    },
     createdAt: {
         type: Date,
         default: Date.now,

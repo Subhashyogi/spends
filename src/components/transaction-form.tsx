@@ -30,6 +30,12 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
   // New state for recurring suggestion
   const [showRecurringSuggestion, setShowRecurringSuggestion] = useState(false);
 
+  // Warranty & Subscription State
+  const [hasWarranty, setHasWarranty] = useState(false);
+  const [warrantyExpiry, setWarrantyExpiry] = useState("");
+  const [isSubscription, setIsSubscription] = useState(false);
+  const [subscriptionName, setSubscriptionName] = useState("");
+
   // Keywords to detect recurring bills
   const RECURRING_KEYWORDS = ['rent', 'gym', 'subscription', 'bill', 'recharge', 'premium', 'emi', 'sip', 'wifi', 'broadband', 'netflix', 'spotify', 'prime'];
 
@@ -99,6 +105,10 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
         date: new Date(date).toISOString(),
         isRecurring,
         frequency: isRecurring ? frequency : undefined,
+        hasWarranty,
+        warrantyExpiry: hasWarranty ? new Date(warrantyExpiry).toISOString() : undefined,
+        isSubscription,
+        subscriptionName: isSubscription ? subscriptionName : undefined,
       };
 
       // Add split data if splitting
@@ -133,7 +143,12 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
       setUseCustomCategory(false);
       setIsRecurring(false);
       setSplitWith([]);
+      setSplitWith([]);
       setIsSplitting(false);
+      setHasWarranty(false);
+      setWarrantyExpiry("");
+      setIsSubscription(false);
+      setSubscriptionName("");
 
       if (onTransactionAdded) onTransactionAdded();
 
@@ -369,46 +384,101 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
 
         {/* Split with Friends */}
         {type === 'expense' && (
-          <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="split"
-                  checked={isSplitting}
-                  onChange={(e) => setIsSplitting(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <label htmlFor="split" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Split with Friends
-                </label>
+          <div className="space-y-4">
+            {/* Warranty & Subscription Toggles */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Warranty Toggle */}
+              <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="warranty"
+                    checked={hasWarranty}
+                    onChange={(e) => setHasWarranty(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <label htmlFor="warranty" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Has Warranty
+                  </label>
+                </div>
+                {hasWarranty && (
+                  <input
+                    type="date"
+                    value={warrantyExpiry}
+                    onChange={(e) => setWarrantyExpiry(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-sm outline-none dark:border-zinc-700 dark:bg-zinc-800"
+                    placeholder="Expiry Date"
+                  />
+                )}
+              </div>
+
+              {/* Subscription Toggle */}
+              <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="subscription"
+                    checked={isSubscription}
+                    onChange={(e) => setIsSubscription(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <label htmlFor="subscription" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Subscription
+                  </label>
+                </div>
+                {isSubscription && (
+                  <input
+                    type="text"
+                    value={subscriptionName}
+                    onChange={(e) => setSubscriptionName(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-sm outline-none dark:border-zinc-700 dark:bg-zinc-800"
+                    placeholder="Name (e.g. Netflix)"
+                  />
+                )}
               </div>
             </div>
 
-            {isSplitting && (
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {friends.length === 0 ? (
-                  <p className="col-span-2 text-xs text-zinc-500">No friends added yet.</p>
-                ) : (
-                  friends.map(friend => (
-                    <button
-                      key={friend.userId}
-                      type="button"
-                      onClick={() => toggleFriendSplit(friend.userId)}
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all ${splitWith.includes(friend.userId)
-                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
-                        : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                        }`}
-                    >
-                      <div className="h-6 w-6 rounded-full bg-indigo-100 text-xs flex items-center justify-center text-indigo-600">
-                        {friend.username[0].toUpperCase()}
-                      </div>
-                      {friend.name || friend.username}
-                    </button>
-                  ))
-                )}
+            <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="split"
+                    checked={isSplitting}
+                    onChange={(e) => setIsSplitting(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <label htmlFor="split" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    Split with Friends
+                  </label>
+                </div>
               </div>
-            )}
+
+              {isSplitting && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {friends.length === 0 ? (
+                    <p className="col-span-2 text-xs text-zinc-500">No friends added yet.</p>
+                  ) : (
+                    friends.map(friend => (
+                      <button
+                        key={friend.userId}
+                        type="button"
+                        onClick={() => toggleFriendSplit(friend.userId)}
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all ${splitWith.includes(friend.userId)
+                          ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
+                          : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                          }`}
+                      >
+                        <div className="h-6 w-6 rounded-full bg-indigo-100 text-xs flex items-center justify-center text-indigo-600">
+                          {friend.username[0].toUpperCase()}
+                        </div>
+                        {friend.name || friend.username}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

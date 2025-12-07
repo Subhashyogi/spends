@@ -17,6 +17,7 @@ export default function ActivityLog() {
     const [logs, setLogs] = useState<Log[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showAll, setShowAll] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -67,9 +68,11 @@ export default function ActivityLog() {
         );
     }
 
+    const displayedLogs = showAll ? logs : logs.slice(0, 5);
+
     return (
         <div className="space-y-4">
-            {logs.map((log) => (
+            {displayedLogs.map((log) => (
                 <motion.div
                     key={log._id}
                     initial={{ opacity: 0, y: 10 }}
@@ -94,6 +97,15 @@ export default function ActivityLog() {
                     </div>
                 </motion.div>
             ))}
+
+            {logs.length > 5 && (
+                <button
+                    onClick={() => setShowAll(!showAll)}
+                    className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                >
+                    {showAll ? "Show Less" : "View All"}
+                </button>
+            )}
         </div>
     );
 }

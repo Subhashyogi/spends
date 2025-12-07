@@ -12,6 +12,10 @@ export const transactionCreateSchema = z.object({
   nextDueDate: z.coerce.date().optional(),
   currency: z.string().length(3).optional(),
   tags: z.array(z.string()).optional(),
+  isSubscription: z.boolean().optional(),
+  subscriptionName: z.string().optional(),
+  hasWarranty: z.boolean().optional(),
+  warrantyExpiry: z.coerce.date().optional(),
 });
 
 export const transactionUpdateSchema = transactionCreateSchema.partial();

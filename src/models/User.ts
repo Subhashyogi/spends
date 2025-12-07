@@ -5,11 +5,34 @@ const UserSchema = new Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     username: { type: String, unique: true, trim: true, lowercase: true, sparse: true }, // sparse allows nulls for existing users
+    avatar: { type: String },
     friends: {
       type: [{
         userId: { type: Schema.Types.ObjectId, ref: 'User' },
         username: String,
-        name: String
+        name: String,
+        image: String,
+        // Advanced Message Schema
+        messages: [{
+          _id: { type: Schema.Types.ObjectId, auto: true },
+          sender: { type: Schema.Types.ObjectId, ref: 'User' },
+          content: { type: String, default: "" },
+          type: { type: String, enum: ['text', 'image', 'video', 'audio'], default: 'text' },
+          fileUrl: String,
+          createdAt: { type: Date, default: Date.now },
+          read: { type: Boolean, default: false }
+        }]
+      }],
+      default: []
+    },
+    friendRequests: {
+      type: [{
+        userId: { type: Schema.Types.ObjectId, ref: 'User' },
+        username: String,
+        name: String,
+        type: { type: String, enum: ['incoming', 'outgoing'] },
+        status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+        createdAt: { type: Date, default: Date.now }
       }],
       default: []
     },
@@ -46,22 +69,7 @@ const UserSchema = new Schema(
               }],
               default: []
             },
-            createdAt: { type: Date },
-            updatedAt: { type: Date },
-          },
-          {}
-        ),
-      ],
-      default: [],
-    },
-    budgets: {
-      type: [
-        new Schema(
-          {
-            _id: { type: Schema.Types.ObjectId, required: true },
-            month: { type: String, required: true },
-            amount: { type: Number, required: true, min: 0 },
-            category: { type: String },
+            hasWarranty: { type: Boolean, default: false },
             createdAt: { type: Date },
             updatedAt: { type: Date },
           },
@@ -104,6 +112,18 @@ const UserSchema = new Schema(
       ],
       default: [],
     },
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorSecret: { type: String, select: false },
+    sessions: {
+      type: [{
+        sessionId: { type: String, required: true },
+        userAgent: { type: String },
+        ip: { type: String },
+        lastActive: { type: Date, default: Date.now },
+        createdAt: { type: Date, default: Date.now }
+      }],
+      default: []
+    }
   },
   { timestamps: true }
 );

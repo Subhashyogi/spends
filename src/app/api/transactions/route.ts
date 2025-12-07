@@ -138,6 +138,23 @@ export async function POST(req: Request) {
       }
     }
 
+    // Auto-detect subscription
+    let isSubscription = parsed.data.isSubscription || false;
+    let subscriptionName = parsed.data.subscriptionName;
+
+    if (!isSubscription && parsed.data.description) {
+      const lowerDesc = parsed.data.description.toLowerCase();
+      const subKeywords = ['netflix', 'spotify', 'amazon', 'prime', 'youtube', 'apple', 'hulu', 'disney', 'hotstar'];
+
+      for (const keyword of subKeywords) {
+        if (lowerDesc.includes(keyword)) {
+          isSubscription = true;
+          subscriptionName = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+          break;
+        }
+      }
+    }
+
     const snapshot: any = {
       _id: new mongoose.Types.ObjectId(),
       type: parsed.data.type,
@@ -152,6 +169,11 @@ export async function POST(req: Request) {
       isRecurring: parsed.data.isRecurring || false,
       frequency: parsed.data.frequency,
       tags: parsed.data.tags || [],
+      // New fields
+      hasWarranty: parsed.data.hasWarranty || false,
+      warrantyExpiry: parsed.data.warrantyExpiry ? new Date(parsed.data.warrantyExpiry) : undefined,
+      isSubscription,
+      subscriptionName,
       createdAt: now,
       updatedAt: now,
     };
@@ -168,6 +190,17 @@ export async function POST(req: Request) {
       entity: 'TRANSACTION',
       details: `Created ${snapshot.type} of ${snapshot.amount} for ${snapshot.category}`,
     });
+
+    // Check for badges
+    // We don't await this to keep response fast, or we can if we want to return unlocked badges
+    // For now, let's run it in background (fire and forget) or await if we want consistency.
+    // Since Vercel serverless might kill background tasks, better to await.
+    try {
+      const { checkAndAwardBadges } = await import('../../../lib/badge-logic');
+      await checkAndAwardBadges(userId);
+    } catch (e) {
+      console.error('Failed to check badges:', e);
+    }
 
     return NextResponse.json({ data: snapshot }, { status: 201 });
   } catch (err: any) {

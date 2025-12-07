@@ -80,10 +80,10 @@ export default function BudgetProgress({ budgets, transactions, categories }: Bu
                                 animate={{ width: `${item.percentage}%` }}
                                 transition={{ duration: 1, ease: "easeOut" }}
                                 className={`h-full rounded-full ${item.isOverBudget
-                                        ? "bg-rose-500"
-                                        : item.percentage > 80
-                                            ? "bg-amber-500"
-                                            : "bg-emerald-500"
+                                    ? "bg-rose-500"
+                                    : item.percentage > 80
+                                        ? "bg-amber-500"
+                                        : "bg-emerald-500"
                                     }`}
                             />
                         </div>
@@ -93,6 +93,22 @@ export default function BudgetProgress({ budgets, transactions, categories }: Bu
                         )}
                     </div>
                 ))}
+
+                {/* Subscription Summary */}
+                <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <span className="p-1.5 rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                            </span>
+                            <span className="font-medium text-zinc-700 dark:text-zinc-300">Subscriptions</span>
+                        </div>
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                            ₹{transactions.filter(t => t.isSubscription && new Date(t.date).getMonth() === new Date().getMonth()).reduce((acc, curr) => acc + curr.amount, 0)}
+                            <span className="text-xs text-zinc-500 font-normal ml-1">this month</span>
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     );

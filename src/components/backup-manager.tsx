@@ -11,12 +11,52 @@ export default function BackupManager() {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
     const [mode, setMode] = useState<"local" | "cloud" | "restore">("local");
+    const [isVerified, setIsVerified] = useState(false);
+    const [lastBackup, setLastBackup] = useState<string | null>(null);
+    const [backupType, setBackupType] = useState<"user" | "system">("user");
 
-    const handleLocalBackup = async () => {
+    // Fetch last backup time on mount
+    useState(() => {
+        fetch("/api/backup/cloud?info=true")
+            .then(res => res.json())
+            .then(data => {
+                if (data.timestamp) {
+                    setLastBackup(new Date(data.timestamp).toLocaleString());
+                    if (data.encryptionMethod) setBackupType(data.encryptionMethod);
+                }
+            })
+            .catch(() => { }); // Ignore errors
+    });
+
+    const handleVerify = async () => {
         if (!password) {
-            setStatus({ type: "error", message: "Encryption password is required" });
+            setStatus({ type: "error", message: "Password is required" });
             return;
         }
+        setLoading(true);
+        setStatus(null);
+        try {
+            const res = await fetch("/api/user/verify-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password })
+            });
+            const { ok, data } = await safeJson(res);
+
+            if (!ok) throw new Error(data?.error || "Incorrect password");
+
+            setIsVerified(true);
+            setStatus({ type: "success", message: "Password verified! You can now proceed." });
+        } catch (e: any) {
+            setStatus({ type: "error", message: e.message || "Verification failed" });
+            setIsVerified(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLocalBackup = async () => {
+        if (!isVerified) return;
         setLoading(true);
         setStatus(null);
         try {
@@ -47,10 +87,7 @@ export default function BackupManager() {
     };
 
     const handleCloudBackup = async () => {
-        if (!password) {
-            setStatus({ type: "error", message: "Encryption password is required" });
-            return;
-        }
+        if (!isVerified) return;
         setLoading(true);
         setStatus(null);
         try {
@@ -72,6 +109,8 @@ export default function BackupManager() {
             if (!uploadRes.ok) throw new Error("Failed to upload to cloud");
 
             setStatus({ type: "success", message: "Backup saved to cloud successfully!" });
+            setLastBackup(new Date().toLocaleString());
+            setBackupType("user"); // Manual backup is always user-encrypted
         } catch (e: any) {
             setStatus({ type: "error", message: e.message || "Cloud backup failed" });
         } finally {
@@ -80,22 +119,28 @@ export default function BackupManager() {
     };
 
     const handleRestore = async (file?: File) => {
-        if (!password) {
-            setStatus({ type: "error", message: "Decryption password is required" });
-            return;
-        }
+        if (!isVerified) return;
         setLoading(true);
         setStatus(null);
         try {
+            // Handle Auto Backup (System Encrypted)
+            if (!file && backupType === "system") {
+                const res = await fetch("/api/backup/restore-auto", { method: "POST" });
+                const { ok, data } = await safeJson(res);
+                if (!ok) throw new Error(data?.error || "Failed to restore auto-backup");
+
+                setStatus({ type: "success", message: "Auto-backup restored successfully! Reloading..." });
+                setTimeout(() => window.location.reload(), 2000);
+                return;
+            }
+
+            // Handle Manual Backup (User Encrypted)
             let encryptedData = "";
 
             if (file) {
                 // Read file
                 encryptedData = await file.text();
             } else {
-                // Fetch from cloud (we need a GET endpoint for encrypted blob, reuse GET /api/backup?type=cloud maybe? 
-                // Or just add a new endpoint. For now let's assume we can't easily fetch cloud blob without another endpoint.
-                // Let's add fetching cloud backup to GET /api/backup/cloud)
                 const res = await fetch("/api/backup/cloud");
                 const { ok, data } = await safeJson(res);
                 if (!ok) throw new Error("No cloud backup found");
@@ -128,30 +173,30 @@ export default function BackupManager() {
         <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-3">
                 <button
-                    onClick={() => setMode("local")}
+                    onClick={() => { setMode("local"); setIsVerified(false); setPassword(""); setStatus(null); }}
                     className={`flex flex-col items-center gap-3 rounded-2xl border p-6 transition-all ${mode === "local"
-                            ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
-                            : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
+                        : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                         }`}
                 >
                     <Download className="h-8 w-8" />
                     <span className="font-medium">Local Backup</span>
                 </button>
                 <button
-                    onClick={() => setMode("cloud")}
+                    onClick={() => { setMode("cloud"); setIsVerified(false); setPassword(""); setStatus(null); }}
                     className={`flex flex-col items-center gap-3 rounded-2xl border p-6 transition-all ${mode === "cloud"
-                            ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
-                            : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
+                        : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                         }`}
                 >
                     <CloudUpload className="h-8 w-8" />
                     <span className="font-medium">Cloud Sync</span>
                 </button>
                 <button
-                    onClick={() => setMode("restore")}
+                    onClick={() => { setMode("restore"); setIsVerified(false); setPassword(""); setStatus(null); }}
                     className={`flex flex-col items-center gap-3 rounded-2xl border p-6 transition-all ${mode === "restore"
-                            ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
-                            : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
+                        : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                         }`}
                 >
                     <RefreshCw className="h-8 w-8" />
@@ -172,90 +217,118 @@ export default function BackupManager() {
                         {mode === "restore" && "Restore Data"}
                     </h3>
                     <p className="text-sm text-zinc-500">
-                        {mode === "local" && "Download your data as an encrypted file. You will need your password to restore it."}
+                        {mode === "local" && "Download your data as an encrypted file. You will need your account password to restore it."}
                         {mode === "cloud" && "Securely save an encrypted snapshot of your data to the cloud."}
                         {mode === "restore" && "Restore your data from a local file or cloud backup. This will overwrite current data."}
                     </p>
+                    {mode === "cloud" && lastBackup && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Last backup: {lastBackup} {backupType === "system" && "(Auto)"}
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-4">
                     <div>
                         <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                            Encryption Password
+                            Account Password
                         </label>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full rounded-xl border border-zinc-200 bg-white py-2 pl-10 pr-4 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-800 dark:bg-zinc-900"
-                                placeholder="Enter a strong password"
-                            />
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        setIsVerified(false);
+                                    }}
+                                    className="w-full rounded-xl border border-zinc-200 bg-white py-2 pl-10 pr-4 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-800 dark:bg-zinc-900"
+                                    placeholder="Enter your login password"
+                                    disabled={loading && isVerified}
+                                />
+                            </div>
+                            {!isVerified && (
+                                <button
+                                    onClick={handleVerify}
+                                    disabled={loading || !password}
+                                    className="rounded-xl bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                                >
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+                                </button>
+                            )}
                         </div>
-                        <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
-                            <AlertTriangle className="mr-1 inline h-3 w-3" />
-                            If you forget this password, your backup cannot be recovered.
+                        <p className="mt-1 text-xs text-zinc-500">
+                            Enter your account password to verify your identity and encrypt/decrypt your data.
                         </p>
                     </div>
 
-                    {mode === "local" && (
-                        <button
-                            onClick={handleLocalBackup}
-                            disabled={loading || !password}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+                    {isVerified && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="space-y-4 pt-2"
                         >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                            Download Backup
-                        </button>
-                    )}
-
-                    {mode === "cloud" && (
-                        <button
-                            onClick={handleCloudBackup}
-                            disabled={loading || !password}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
-                        >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
-                            Upload to Cloud
-                        </button>
-                    )}
-
-                    {mode === "restore" && (
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="relative">
-                                <input
-                                    type="file"
-                                    accept=".enc"
-                                    onChange={(e) => {
-                                        if (e.target.files?.[0]) handleRestore(e.target.files[0]);
-                                    }}
-                                    className="absolute inset-0 cursor-pointer opacity-0"
-                                    disabled={loading || !password}
-                                />
+                            {mode === "local" && (
                                 <button
-                                    disabled={loading || !password}
-                                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                                    onClick={handleLocalBackup}
+                                    disabled={loading}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
                                 >
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                                    Restore from File
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                    Download Backup
                                 </button>
-                            </div>
-                            <button
-                                onClick={() => handleRestore()}
-                                disabled={loading || !password}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
-                            >
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudDownload className="h-4 w-4" />}
-                                Restore from Cloud
-                            </button>
-                        </div>
+                            )}
+
+                            {mode === "cloud" && (
+                                <button
+                                    onClick={handleCloudBackup}
+                                    disabled={loading}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+                                >
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+                                    Upload to Cloud
+                                </button>
+                            )}
+
+                            {mode === "restore" && (
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="relative">
+                                        <input
+                                            type="file"
+                                            accept=".enc"
+                                            onChange={(e) => {
+                                                if (e.target.files?.[0]) handleRestore(e.target.files[0]);
+                                            }}
+                                            className="absolute inset-0 cursor-pointer opacity-0"
+                                            disabled={loading}
+                                        />
+                                        <button
+                                            disabled={loading}
+                                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                                        >
+                                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                            Restore from File
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRestore()}
+                                        disabled={loading}
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+                                    >
+                                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudDownload className="h-4 w-4" />}
+                                        Restore from Cloud {backupType === "system" && "(Auto)"}
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
                     )}
 
                     {status && (
                         <div className={`flex items-center gap-2 rounded-xl p-3 text-sm ${status.type === "success"
-                                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
-                                : "bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400"
+                            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+                            : "bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400"
                             }`}>
                             {status.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
                             {status.message}

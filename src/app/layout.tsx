@@ -4,10 +4,12 @@ import "./globals.css";
 import ToastProvider from "@/components/ui/toast";
 import ThemeProvider from "@/components/theme-provider";
 import ThemeToggle from "@/components/theme-toggle";
+import LayoutWrapper from "@/components/layout-wrapper";
 
 import PWARegister from "@/components/pwa-register";
 import NextSessionProvider from "@/components/session-provider";
 import AuthButtons from "@/components/auth-buttons";
+import AppLockProvider from "@/components/app-lock-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,17 +44,12 @@ export default function RootLayout({
         <ThemeProvider>
           <NextSessionProvider>
             <ToastProvider>
-              <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-                <div className="mb-6 flex items-center justify-between">
-                  <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Spends</h1>
-                  <div className="flex items-center gap-2">
-                    <ThemeToggle />
-                    <AuthButtons />
-                  </div>
-                </div>
-                {children}
-              </div>
-              <PWARegister />
+              <AppLockProvider>
+                <LayoutWrapper>
+                  {children}
+                </LayoutWrapper>
+                <PWARegister />
+              </AppLockProvider>
             </ToastProvider>
           </NextSessionProvider>
         </ThemeProvider>

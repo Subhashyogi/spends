@@ -24,6 +24,12 @@ export default function HeaderLinks() {
       >
         Analytics
       </Link>
+      <Link
+        href="/chat"
+        className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+      >
+        Message
+      </Link>
     </div>
   );
 }
