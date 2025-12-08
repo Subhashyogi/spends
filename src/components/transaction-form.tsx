@@ -18,7 +18,7 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [account, setAccount] = useState<"cash" | "bank" | "upi" | "wallet">("cash");
-  const [date, setDate] = useState<string>("");
+  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<"daily" | "weekly" | "monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
@@ -82,6 +82,31 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
         : [...prev, friendId]
     );
   };
+
+  async function autofillLatest() {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/transactions?limit=1");
+      const { ok, data } = await safeJson(res);
+      if (ok && data.data && data.data.length > 0) {
+        const last = data.data[0];
+        setType(last.type);
+        setCategory(last.category);
+        setAccount(last.account);
+        setDescription(last.description);
+        setAmount(last.amount.toString());
+        // Keep date as today
+        if (last.isRecurring) {
+          setIsRecurring(true);
+          setFrequency(last.frequency);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -150,6 +175,7 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
       setIsSubscription(false);
       setSubscriptionName("");
 
+      window.dispatchEvent(new Event("transactionsUpdated"));
       if (onTransactionAdded) onTransactionAdded();
 
       setTimeout(() => setSuccess(false), 2000);
@@ -169,9 +195,19 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
       className="rounded-3xl border border-zinc-200/50 bg-white/80 p-6 shadow-xl shadow-zinc-200/20 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-900/80 dark:shadow-zinc-900/20"
     >
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Add Transaction
-        </h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            Add Transaction
+          </h3>
+          <button
+            type="button"
+            onClick={autofillLatest}
+            className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+            title="Copy details from last transaction"
+          >
+            📋 Autofill Latest
+          </button>
+        </div>
         <div className="flex self-start rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800 sm:self-auto">
           <button
             type="button"

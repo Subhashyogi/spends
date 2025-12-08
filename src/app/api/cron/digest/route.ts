@@ -17,24 +17,23 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const force = searchParams.get('force') === 'true';
 
-        // Check if today is the last day of the month
         const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
+        const isFirstDay = today.getDate() === 1;
 
-        // If tomorrow is the 1st of the next month, then today is the last day
-        const isLastDay = tomorrow.getDate() === 1;
+        if (!isFirstDay && !force) {
+            return NextResponse.json({ message: 'Not the 1st of the month', skipped: true });
+        }
 
-        if (!isLastDay && !force) {
-            return NextResponse.json({ message: 'Not the last day of the month', skipped: true });
+        // Determine report types to send
+        const reportsToSend: Array<'monthly' | 'yearly'> = ['monthly'];
+
+        // If it's Jan 1st, also send yearly report
+        if ((today.getMonth() === 0 && isFirstDay) || (force && searchParams.get('type') === 'yearly')) {
+            reportsToSend.push('yearly');
         }
 
         const users = await User.find({});
         const results = [];
-
-        // Configure transporter once
-        console.log("Email User present:", !!process.env.EMAIL_USER);
-        console.log("Email Pass present:", !!process.env.EMAIL_PASS);
 
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
             throw new Error("Missing email credentials in .env.local");
@@ -51,80 +50,99 @@ export async function GET(req: Request) {
         for (const user of users) {
             if (!user.email) continue;
 
-            try {
-                // Check if already sent this month (per user)
-                if (user.lastMonthlyDigestSent && !force) {
-                    const lastSent = new Date(user.lastMonthlyDigestSent);
-                    if (lastSent.getMonth() === today.getMonth() && lastSent.getFullYear() === today.getFullYear()) {
-                        results.push({ email: user.email, status: 'skipped', reason: 'already_sent' });
-                        continue;
+            for (const reportType of reportsToSend) {
+                try {
+                    let startDate: Date;
+                    let endDate: Date;
+                    let lastSentField: string;
+
+                    if (reportType === 'monthly') {
+                        // Previous month
+                        // If today is Dec 1st, we want Nov 1st to Nov 30th
+                        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                        endDate = new Date(today.getFullYear(), today.getMonth(), 0); // Last day of previous month
+                        lastSentField = 'lastMonthlyDigestSent';
+                    } else {
+                        // Previous year
+                        // If today is Jan 1st 2026, we want Jan 1st 2025 to Dec 31st 2025
+                        startDate = new Date(today.getFullYear() - 1, 0, 1);
+                        endDate = new Date(today.getFullYear() - 1, 11, 31);
+                        lastSentField = 'lastYearlyDigestSent';
                     }
-                }
 
-                // Calculate stats for the month
-                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-                const pipeline = [
-                    { $match: { _id: user._id } },
-                    { $unwind: '$transactions' },
-                    {
-                        $match: {
-                            'transactions.date': { $gte: startOfMonth, $lte: today },
-                            'transactions.type': 'expense'
+                    // Check if already sent (per user & type)
+                    if ((user as any)[lastSentField] && !force) {
+                        const lastSent = new Date((user as any)[lastSentField]);
+                        // For monthly: check if sent this month
+                        // For yearly: check if sent this year
+                        if (lastSent.getMonth() === today.getMonth() && lastSent.getFullYear() === today.getFullYear()) {
+                            results.push({ email: user.email, type: reportType, status: 'skipped', reason: 'already_sent' });
+                            continue;
                         }
-                    },
-                    { $replaceRoot: { newRoot: '$transactions' } }
-                ];
+                    }
 
-                const expenses = await User.aggregate(pipeline);
-                const totalSpend = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+                    const pipeline = [
+                        { $match: { _id: user._id } },
+                        { $unwind: '$transactions' },
+                        {
+                            $match: {
+                                'transactions.date': { $gte: startDate, $lte: endDate },
+                                'transactions.type': 'expense'
+                            }
+                        },
+                        { $replaceRoot: { newRoot: '$transactions' } }
+                    ];
 
-                const topExpenses = [...expenses]
-                    .sort((a, b) => b.amount - a.amount)
-                    .slice(0, 3)
-                    .map(e => ({ name: e.description, amount: e.amount, date: e.date }));
+                    const expenses = await User.aggregate(pipeline);
+                    const totalSpend = expenses.reduce((acc, curr) => acc + curr.amount, 0);
 
-                const upcomingBills = user.transactions
-                    .filter((t: any) => t.isRecurring)
-                    .slice(0, 3)
-                    .map((t: any) => ({ name: t.description, amount: t.amount, date: t.date }));
+                    const topExpenses = [...expenses]
+                        .sort((a, b) => b.amount - a.amount)
+                        .slice(0, 3)
+                        .map(e => ({ name: e.description, amount: e.amount, date: e.date }));
 
-                const tips = [
-                    "Review your subscriptions to save money.",
-                    "Try the 50/30/20 rule: 50% needs, 30% wants, 20% savings.",
-                    "Cook at home more often to reduce food expenses.",
-                    "Set a savings goal for your next big purchase.",
-                    "Track every small expense, they add up!"
-                ];
-                const aiTip = tips[Math.floor(Math.random() * tips.length)];
+                    const upcomingBills = user.transactions
+                        .filter((t: any) => t.isRecurring)
+                        .slice(0, 3)
+                        .map((t: any) => ({ name: t.description, amount: t.amount, date: t.date }));
 
-                // Only send if there's activity or it's forced
-                if (totalSpend > 0 || upcomingBills.length > 0 || force) {
-                    const emailHtml = await render(DigestTemplate({
-                        userName: user.name || 'User',
-                        type: 'monthly',
-                        totalSpend,
-                        topExpenses,
-                        upcomingBills,
-                        aiTip
-                    }));
+                    const tips = [
+                        "Review your subscriptions to save money.",
+                        "Try the 50/30/20 rule: 50% needs, 30% wants, 20% savings.",
+                        "Cook at home more often to reduce food expenses.",
+                        "Set a savings goal for your next big purchase.",
+                        "Track every small expense, they add up!"
+                    ];
+                    const aiTip = tips[Math.floor(Math.random() * tips.length)];
 
-                    await transporter.sendMail({
-                        from: process.env.EMAIL_USER,
-                        to: user.email,
-                        subject: `Your Monthly Financial Digest`,
-                        html: emailHtml,
-                    });
+                    // Only send if there's activity or it's forced
+                    if (totalSpend > 0 || upcomingBills.length > 0 || force) {
+                        const emailHtml = await render(DigestTemplate({
+                            userName: user.name || 'User',
+                            type: reportType,
+                            totalSpend,
+                            topExpenses,
+                            upcomingBills,
+                            aiTip
+                        }));
 
-                    // Update last sent date
-                    await User.findByIdAndUpdate(user._id, { lastMonthlyDigestSent: today });
-                    results.push({ email: user.email, status: 'sent' });
-                } else {
-                    results.push({ email: user.email, status: 'skipped', reason: 'no_activity' });
+                        await transporter.sendMail({
+                            from: process.env.EMAIL_USER,
+                            to: user.email,
+                            subject: `Your ${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Financial Digest`,
+                            html: emailHtml,
+                        });
+
+                        // Update last sent date
+                        await User.findByIdAndUpdate(user._id, { [lastSentField]: today });
+                        results.push({ email: user.email, type: reportType, status: 'sent' });
+                    } else {
+                        results.push({ email: user.email, type: reportType, status: 'skipped', reason: 'no_activity' });
+                    }
+                } catch (err: any) {
+                    console.error(`Failed to process user ${user.email} for ${reportType}:`, err);
+                    results.push({ email: user.email, type: reportType, status: 'failed', error: err.message });
                 }
-            } catch (err: any) {
-                console.error(`Failed to process user ${user.email}:`, err);
-                results.push({ email: user.email, status: 'failed', error: err.message });
             }
         }
 

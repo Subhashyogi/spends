@@ -100,12 +100,23 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     ]);
 
     // Log activity
-    await ActivityLog.create({
-      userId,
+    const logEntry = {
       action: 'UPDATE',
       entity: 'TRANSACTION',
       details: `Updated transaction of ${outRows[0].amount}`,
-    });
+      createdAt: new Date()
+    };
+
+    await Promise.all([
+      User.updateOne(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { $push: { activityLogs: logEntry } }
+      ),
+      ActivityLog.create({
+        userId,
+        ...logEntry
+      })
+    ]);
 
     return NextResponse.json({ data: outRows[0] });
   } catch (err: any) {
@@ -129,12 +140,23 @@ export async function DELETE(_req: Request, context: { params: Promise<{ id: str
     if (!result.modifiedCount) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     // Log activity
-    await ActivityLog.create({
-      userId,
+    const logEntry = {
       action: 'DELETE',
       entity: 'TRANSACTION',
       details: `Deleted transaction`,
-    });
+      createdAt: new Date()
+    };
+
+    await Promise.all([
+      User.updateOne(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { $push: { activityLogs: logEntry } }
+      ),
+      ActivityLog.create({
+        userId,
+        ...logEntry
+      })
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

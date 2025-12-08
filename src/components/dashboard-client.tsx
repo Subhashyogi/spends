@@ -16,6 +16,7 @@ import BudgetProgress from "@/components/budget-progress";
 import AppLockProvider from "@/components/app-lock-provider";
 import WarrantyTracker from "@/components/warranty-tracker";
 import SubscriptionTracker from "@/components/subscription-tracker";
+import AchievementCelebration from "@/components/achievement-celebration";
 
 import Button from "@/components/ui/button";
 
@@ -171,6 +172,7 @@ export default function DashboardClient() {
             </div>
 
             <FinanceChatbot />
+            <AchievementCelebration />
           </div>
         </main>
       </div>

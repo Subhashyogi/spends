@@ -37,13 +37,17 @@ export async function GET(req: Request) {
       match['transactions.description'] = { $regex: q.trim(), $options: 'i' };
     }
 
+    const limit = searchParams.get('limit');
+    const limitNum = limit ? parseInt(limit) : undefined;
+
     const pipeline: any[] = [
       { $match: { _id: userObjectId } },
       { $unwind: '$transactions' },
       Object.keys(match).length ? { $match: match } : undefined,
       { $replaceRoot: { newRoot: '$transactions' } },
       { $addFields: { user: 'Me' } }, // Mark as mine
-      { $sort: { date: -1 } }
+      { $sort: { date: -1 } },
+      limitNum ? { $limit: limitNum } : undefined
     ].filter(Boolean);
 
     // Check for partner
@@ -178,18 +182,29 @@ export async function POST(req: Request) {
       updatedAt: now,
     };
 
-    await User.updateOne(
-      { _id: new mongoose.Types.ObjectId(userId) },
-      { $push: { transactions: snapshot }, $addToSet: { accounts: snapshot.account } }
-    ).exec();
-
-    // Log activity
-    await ActivityLog.create({
-      userId,
+    const logEntry = {
       action: 'CREATE',
       entity: 'TRANSACTION',
       details: `Created ${snapshot.type} of ${snapshot.amount} for ${snapshot.category}`,
-    });
+      createdAt: new Date()
+    };
+
+    await Promise.all([
+      User.updateOne(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        {
+          $push: {
+            transactions: snapshot,
+            activityLogs: logEntry
+          },
+          $addToSet: { accounts: snapshot.account }
+        }
+      ).exec(),
+      ActivityLog.create({
+        userId,
+        ...logEntry
+      })
+    ]);
 
     // Check for badges
     // We don't await this to keep response fast, or we can if we want to return unlocked badges

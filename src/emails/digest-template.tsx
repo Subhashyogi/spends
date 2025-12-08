@@ -14,7 +14,7 @@ import * as React from "react";
 
 interface DigestTemplateProps {
     userName: string;
-    type: "daily" | "weekly" | "monthly";
+    type: "daily" | "weekly" | "monthly" | "yearly";
     totalSpend: number;
     topExpenses: Array<{ name: string; amount: number; date: string }>;
     upcomingBills: Array<{ name: string; amount: number; date: string }>;

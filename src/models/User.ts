@@ -123,6 +123,15 @@ const UserSchema = new Schema(
         createdAt: { type: Date, default: Date.now }
       }],
       default: []
+    },
+    activityLogs: {
+      type: [{
+        action: { type: String, enum: ['LOGIN', 'CREATE', 'UPDATE', 'DELETE'], required: true },
+        entity: { type: String, enum: ['TRANSACTION', 'BUDGET', 'GOAL', 'SESSION'], required: true },
+        details: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now }
+      }],
+      default: []
     }
   },
   { timestamps: true }

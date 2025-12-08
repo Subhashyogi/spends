@@ -46,19 +46,50 @@ export default function ChatWindow({ conversationId, onBack }: { conversationId:
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const getRoomId = () => {
+        if (!session?.user || !conversationId) return null;
+        const currentUserId = (session.user as any).id;
+        // Create a unique room ID for this pair of users
+        return [currentUserId, conversationId].sort().join("-");
+    };
+
     useEffect(() => {
-        if (conversationId) {
+        if (conversationId && session?.user) {
             fetchConversation();
             fetchMessages();
 
-            socket.emit("join_conversation", conversationId);
+            const roomId = getRoomId();
+            if (roomId) {
+                socket.emit("join_conversation", roomId);
+                console.log("Joined room:", roomId);
+            }
 
             socket.on("receive_message", (message: Message) => {
-                if (message.conversationId === conversationId) {
+                // Check if message belongs to this conversation (either by ID or room check)
+                if (message.conversationId === conversationId || (message as any).roomId === roomId) {
                     setMessages((prev) => {
+                        // 1. Check if exact ID exists (idempotency)
                         if (prev.some(m => m._id === message._id)) return prev;
+
+                        // 2. If message is from me, check for optimistic duplicate
+                        // Optimistic IDs are timestamps (numeric strings), real IDs are Mongo ObjectIds (hex strings)
+                        if (message.sender._id === (session?.user as any)?.id) {
+                            const optimisticIndex = prev.findIndex(m =>
+                                !isNaN(Number(m._id)) && // Is numeric (temp ID)
+                                m.content === message.content &&
+                                m.type === message.type
+                            );
+
+                            if (optimisticIndex !== -1) {
+                                const newMessages = [...prev];
+                                newMessages[optimisticIndex] = message; // Replace optimistic with real
+                                return newMessages;
+                            }
+                        }
+
                         return [...prev, message];
                     });
+
                     // If I am viewing the conversation, mark incoming message as read immediately
                     if (message.sender._id !== (session?.user as any)?.id) {
                         markMessagesAsRead();
@@ -67,7 +98,7 @@ export default function ChatWindow({ conversationId, onBack }: { conversationId:
             });
 
             socket.on("messages_read", (data: any) => {
-                if (data.conversationId === conversationId) {
+                if (data.roomId === roomId) {
                     setMessages((prev) => prev.map(msg =>
                         msg.sender._id === (session?.user as any)?.id ? { ...msg, read: true } : msg
                     ));
@@ -79,7 +110,7 @@ export default function ChatWindow({ conversationId, onBack }: { conversationId:
                 socket.off("messages_read");
             };
         }
-    }, [conversationId, (session?.user as any)?.id]);
+    }, [conversationId, session?.user]);
 
     useEffect(() => {
         scrollToBottom();
@@ -122,11 +153,15 @@ export default function ChatWindow({ conversationId, onBack }: { conversationId:
                 body: JSON.stringify({ conversationId }),
             });
 
-            // Emit socket event to notify sender
-            socket.emit("mark_read", {
-                conversationId,
-                readerId: (session?.user as any)?.id
-            });
+            const roomId = getRoomId();
+            if (roomId) {
+                // Emit socket event to notify sender
+                socket.emit("mark_read", {
+                    roomId,
+                    conversationId,
+                    readerId: (session?.user as any)?.id
+                });
+            }
         } catch (error) {
             console.error("Failed to mark messages as read", error);
         }
@@ -166,42 +201,66 @@ export default function ChatWindow({ conversationId, onBack }: { conversationId:
     const handleSend = async (audioBlob?: Blob) => {
         if (!input.trim() && !selectedFile && !audioBlob) return;
 
-        let type = "text";
+        let type: "text" | "image" | "video" | "audio" = "text";
         let fileUrl = undefined;
+
+        // Optimistic Update
+        const tempId = Date.now().toString();
+        const optimisticMessage: Message = {
+            _id: tempId,
+            sender: {
+                _id: (session?.user as any)?.id,
+                name: session?.user?.name || "Me",
+                image: session?.user?.image || undefined
+            },
+            content: input,
+            type: "text", // Default, updated below if file/audio
+            createdAt: new Date().toISOString(),
+            read: false,
+            conversationId: conversationId
+        };
 
         try {
             if (audioBlob) {
                 type = "audio";
+                optimisticMessage.type = "audio";
                 const file = new File([audioBlob], "audio.webm", { type: "audio/webm" });
                 fileUrl = await uploadFile(file);
+                optimisticMessage.fileUrl = fileUrl;
             } else if (selectedFile) {
-                fileUrl = await uploadFile(selectedFile);
                 if (selectedFile.type.startsWith("image/")) type = "image";
                 else if (selectedFile.type.startsWith("video/")) type = "video";
+                optimisticMessage.type = type;
+
+                // For files, we might want to wait for upload before showing optimistic, 
+                // or show a loading state. For now, let's wait for upload.
+                fileUrl = await uploadFile(selectedFile);
+                optimisticMessage.fileUrl = fileUrl;
             }
 
-            const res = await fetch("/api/chat/messages", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    conversationId,
-                    content: input,
-                    type,
-                    fileUrl,
-                }),
-            });
-
-            const data = await res.json();
-            if (data.message) {
-                socket.emit("send_message", data.message);
-                setMessages((prev) => [...prev, data.message]);
-            }
-
+            // Update UI immediately
+            setMessages((prev) => [...prev, optimisticMessage]);
             setInput("");
             clearFile();
             setIsRecording(false);
+
+            const roomId = getRoomId();
+            if (roomId) {
+                const messagePayload = {
+                    sender: (session?.user as any)?.id,
+                    content: input,
+                    type,
+                    fileUrl,
+                    roomId,
+                    conversationId // This is the recipientId
+                };
+                socket.emit("send_message", messagePayload);
+            }
+
         } catch (error) {
             console.error("Failed to send message", error);
+            // Remove optimistic message on error
+            setMessages((prev) => prev.filter(m => m._id !== tempId));
         }
     };
 

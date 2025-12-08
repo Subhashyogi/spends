@@ -9,57 +9,56 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const query = searchParams.get("q")?.toLowerCase();
 
-        await connectToDatabase();
-
-        // Fetch current user with friends populated
-        const user = await User.findById(userId).select("friends");
-
-        if (!user) {
+        if (!query || query.length < 2) {
             return NextResponse.json({ users: [] });
         }
 
-        const friends = user.friends || [];
-        console.log(`[Search API] Found ${friends.length} friends for user ${userId}`);
+        await connectToDatabase();
 
-        const friendIds = friends.map((f: any) => f.userId);
+        // Fetch current user to check friends and requests
+        const currentUser = await User.findById(userId)
+            .select("friends friendRequests");
 
-        // Fetch details of friends from User collection
-        const friendDetails = await User.find({ _id: { $in: friendIds } })
-            .select("name email image avatar username");
+        if (!currentUser) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
 
-        console.log(`[Search API] Found ${friendDetails.length} friend details in DB`);
+        // Search for users matching the query
+        // Exclude current user
+        const users = await User.find({
+            _id: { $ne: userId },
+            $or: [
+                { name: { $regex: query, $options: "i" } },
+                { username: { $regex: query, $options: "i" } },
+                { email: { $regex: query, $options: "i" } }
+            ]
+        })
+            .select("name username email avatar image")
+            .limit(20);
 
-        // Create a map for quick lookup
-        const friendMap = new Map(friendDetails.map((f: any) => [f._id.toString(), f]));
+        console.log(`[Search API] Found ${users.length} users matching "${query}"`);
 
-        // Combine embedded info with fetched info (handling cases where user might be deleted)
-        let results = friends.map((f: any) => {
-            const found = friendMap.get(f.userId.toString());
-            if (found) {
-                return {
-                    ...found.toObject(),
-                    image: found.avatar || found.image // Ensure image is populated
-                };
-            }
+        const friendIds = new Set((currentUser.friends || []).map((f: any) => f.userId.toString()));
 
-            // Fallback to embedded details
+        // Check for outgoing pending requests
+        const pendingRequestIds = new Set(
+            (currentUser.friendRequests || [])
+                .filter((r: any) => r.type === 'outgoing' && r.status === 'pending')
+                .map((r: any) => r.userId.toString())
+        );
+
+        const results = users.map((user) => {
+            const userIdStr = user._id.toString();
             return {
-                _id: f.userId,
-                name: f.name || f.username || "Unknown Friend",
-                email: "", // Email not stored in friends array
-                image: null,
-                username: f.username
+                id: userIdStr,
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                avatar: user.avatar || user.image,
+                isFriend: friendIds.has(userIdStr),
+                hasPendingRequest: pendingRequestIds.has(userIdStr)
             };
         });
-
-        // Filter friends based on query
-        if (query) {
-            results = results.filter((friend: any) =>
-                (friend.name && friend.name.toLowerCase().includes(query)) ||
-                (friend.username && friend.username.toLowerCase().includes(query)) ||
-                (friend.email && friend.email.toLowerCase().includes(query))
-            );
-        }
 
         return NextResponse.json({ users: results });
 
