@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Laptop, Smartphone, Globe, Clock, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { Laptop, Smartphone, Globe, Clock, Trash2, Loader2, AlertCircle, LogOut } from "lucide-react";
 import { safeJson } from "@/lib/http";
+import { signOut } from "next-auth/react";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 export default function DeviceList() {
     const [sessions, setSessions] = useState<any[]>([]);
@@ -10,6 +12,17 @@ export default function DeviceList() {
     const [revoking, setRevoking] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [showAll, setShowAll] = useState(false);
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        action: () => void;
+    }>({
+        isOpen: false,
+        title: "",
+        description: "",
+        action: () => { }
+    });
 
     useEffect(() => {
         loadSessions();
@@ -29,8 +42,6 @@ export default function DeviceList() {
     };
 
     const revokeSession = async (sessionId: string) => {
-        if (!confirm("Are you sure you want to log out this device?")) return;
-
         setRevoking(sessionId);
         try {
             const res = await fetch("/api/auth/sessions", {
@@ -49,6 +60,51 @@ export default function DeviceList() {
         }
     };
 
+    const revokeAllSessions = async () => {
+        setRevoking("all");
+        try {
+            const res = await fetch("/api/auth/sessions", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ revokeAll: true })
+            });
+
+            if (!res.ok) throw new Error("Failed to revoke sessions");
+
+            setSessions([]);
+            signOut({ callbackUrl: "/auth/signin" });
+        } catch (e: any) {
+            alert(e.message);
+            setRevoking(null);
+        }
+    };
+
+    const handleRevokeClick = (sessionId: string, isCurrent: boolean) => {
+        setConfirmConfig({
+            isOpen: true,
+            title: isCurrent ? "Log out this device?" : "Log out device?",
+            description: isCurrent
+                ? "You will be signed out of your current session on this device."
+                : "This will log out the selected device. They will need to sign in again.",
+            action: () => {
+                if (isCurrent) {
+                    signOut({ callbackUrl: "/auth/signin" });
+                } else {
+                    revokeSession(sessionId);
+                }
+            }
+        });
+    };
+
+    const handleRevokeAllClick = () => {
+        setConfirmConfig({
+            isOpen: true,
+            title: "Log out all devices?",
+            description: "Are you sure you want to log out of all devices? You will be signed out of this device as well.",
+            action: revokeAllSessions
+        });
+    };
+
     if (loading) return <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />;
 
     return (
@@ -58,7 +114,30 @@ export default function DeviceList() {
                     <h3 className="font-medium text-zinc-900 dark:text-zinc-100">Active Sessions</h3>
                     <p className="text-sm text-zinc-500">Manage devices logged into your account.</p>
                 </div>
+                <button
+                    onClick={handleRevokeAllClick}
+                    disabled={revoking !== null || sessions.length === 0}
+                    className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50 dark:text-rose-400 dark:hover:bg-rose-900/20 dark:hover:text-rose-300"
+                >
+                    {revoking === "all" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <LogOut className="h-4 w-4" />
+                    )}
+                    Log out all devices
+                </button>
             </div>
+
+            <ConfirmDialog
+                isOpen={confirmConfig.isOpen}
+                title={confirmConfig.title}
+                description={confirmConfig.description}
+                onConfirm={() => {
+                    setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+                    confirmConfig.action();
+                }}
+                onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            />
 
             {error && (
                 <div className="flex items-center gap-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-600 dark:bg-rose-900/20 dark:text-rose-400">
@@ -100,20 +179,18 @@ export default function DeviceList() {
                             </div>
                         </div>
 
-                        {!session.isCurrent && (
-                            <button
-                                onClick={() => revokeSession(session.sessionId)}
-                                disabled={revoking === session.sessionId}
-                                className="rounded-lg p-2 text-zinc-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:text-rose-400"
-                                title="Revoke Session"
-                            >
-                                {revoking === session.sessionId ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Trash2 className="h-4 w-4" />
-                                )}
-                            </button>
-                        )}
+                        <button
+                            onClick={() => handleRevokeClick(session.sessionId, session.isCurrent)}
+                            disabled={revoking === session.sessionId}
+                            className="rounded-lg p-2 text-zinc-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:text-rose-400"
+                            title={session.isCurrent ? "Log out" : "Log out device"}
+                        >
+                            {revoking === session.sessionId ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <LogOut className="h-4 w-4" />
+                            )}
+                        </button>
                     </div>
                 ))}
 

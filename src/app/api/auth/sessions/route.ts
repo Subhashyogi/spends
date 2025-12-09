@@ -57,18 +57,27 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { sessionId } = await req.json();
-        if (!sessionId) {
-            return NextResponse.json({ error: "Session ID required" }, { status: 400 });
+        const { sessionId, revokeAll } = await req.json();
+
+        if (!sessionId && !revokeAll) {
+            return NextResponse.json({ error: "Session ID or revokeAll required" }, { status: 400 });
         }
 
         await connectToDatabase();
-        await User.updateOne(
-            { email: session.user.email },
-            {
-                $pull: { sessions: { sessionId } }
-            }
-        );
+
+        if (revokeAll) {
+            await User.updateOne(
+                { email: session.user.email },
+                { $set: { sessions: [] } }
+            );
+        } else {
+            await User.updateOne(
+                { email: session.user.email },
+                {
+                    $pull: { sessions: { sessionId } }
+                }
+            );
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

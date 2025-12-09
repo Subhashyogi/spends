@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X, LayoutDashboard, PieChart, Wallet, User } from "lucide-react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/theme-toggle";
 import AuthButtons from "@/components/auth-buttons";
@@ -25,11 +26,15 @@ export default function Navbar() {
                 <div className="flex h-16 items-center justify-between">
                     {/* Logo */}
                     <div className="flex items-center gap-2">
-                        <Link href="/" className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
-                                <span className="text-lg font-bold">S</span>
-                            </div>
-                            <span className="text-lg font-bold text-zinc-900 dark:text-white">Spends</span>
+                        <Link href="/" className="flex items-center gap-0">
+                            <Image
+                                src="/spends.svg"
+                                alt="Spends Logo"
+                                width={32}
+                                height={32}
+                                className="rounded-lg"
+                            />
+                            <span className="text-lg font-bold text-zinc-900 dark:text-white">pends</span>
                         </Link>
                     </div>
 
@@ -43,8 +48,8 @@ export default function Navbar() {
                                     key={link.href}
                                     href={link.href}
                                     className={`flex items-center gap-2 text-sm font-medium transition-colors ${isActive
-                                            ? "text-indigo-600 dark:text-indigo-400"
-                                            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                        ? "text-indigo-600 dark:text-indigo-400"
+                                        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
                                         }`}
                                 >
                                     <Icon className="h-4 w-4" />
@@ -92,8 +97,8 @@ export default function Navbar() {
                                         href={link.href}
                                         onClick={() => setIsOpen(false)}
                                         className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors ${isActive
-                                                ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400"
-                                                : "text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                                            ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400"
+                                            : "text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
                                             }`}
                                     >
                                         <Icon className="h-5 w-5" />

@@ -10,6 +10,7 @@ import PWARegister from "@/components/pwa-register";
 import NextSessionProvider from "@/components/session-provider";
 import AuthButtons from "@/components/auth-buttons";
 import AppLockProvider from "@/components/app-lock-provider";
+import SessionGuard from "@/components/session-guard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,6 +26,10 @@ export const metadata: Metadata = {
   title: "Spends – Personal Finance Tracker",
   description: "Track income, expenses, and savings with a sleek dashboard.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/spends.svg",
+    apple: "/spends.svg",
+  },
 };
 
 export default function RootLayout({
@@ -45,9 +50,11 @@ export default function RootLayout({
           <NextSessionProvider>
             <ToastProvider>
               <AppLockProvider>
-                <LayoutWrapper>
-                  {children}
-                </LayoutWrapper>
+                <SessionGuard>
+                  <LayoutWrapper>
+                    {children}
+                  </LayoutWrapper>
+                </SessionGuard>
                 <PWARegister />
               </AppLockProvider>
             </ToastProvider>

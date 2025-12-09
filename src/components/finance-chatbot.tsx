@@ -66,120 +66,56 @@ export default function FinanceChatbot({ embedded = false, className = "" }: { e
 
     const processQuery = async (query: string) => {
         setIsTyping(true);
-        // Simulate AI thinking time
-        await new Promise(resolve => setTimeout(resolve, 800));
 
-        const lowerQuery = query.toLowerCase();
-        const now = new Date();
-        let responseText = "I'm not sure I understand. Try asking 'How much did I spend last week?' or 'Show me food expenses'.";
-        let chartData = null;
-        let chartType: "line" | "bar" | undefined = undefined;
-        let chartTitle = "";
+        try {
+            // Prepare history for context
+            const history = messages.slice(-10).map(m => ({
+                role: m.role,
+                text: m.text
+            }));
 
-        // Helper to filter by date
-        const filterByDate = (days: number) => {
-            return transactions.filter(t => {
-                const d = new Date(t.date);
-                const diffTime = Math.abs(now.getTime() - d.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return diffDays <= days;
-            });
-        };
-
-        // INTENT: Total Spend
-        if (lowerQuery.includes("spend") || lowerQuery.includes("spent") || lowerQuery.includes("total")) {
-            let days = 30;
-            let period = "last 30 days";
-
-            if (lowerQuery.includes("week") || lowerQuery.includes("7 days")) {
-                days = 7;
-                period = "last 7 days";
-            } else if (lowerQuery.includes("today")) {
-                days = 1;
-                period = "today";
-            }
-
-            const filtered = filterByDate(days).filter(t => t.type === "expense");
-            const total = filtered.reduce((sum, t) => sum + t.amount, 0);
-
-            responseText = `You spent ₹${total.toLocaleString()} in the ${period}.`;
-
-            if (days > 1) {
-                // Generate daily breakdown for chart
-                const dailyData: Record<string, number> = {};
-                filtered.forEach(t => {
-                    const dateStr = new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                    dailyData[dateStr] = (dailyData[dateStr] || 0) + t.amount;
-                });
-
-                chartData = Object.entries(dailyData).map(([name, value]) => ({ name, value }));
-                chartType = "bar";
-                chartTitle = `Spending Trend (${period})`;
-            }
-        }
-
-        // INTENT: Biggest Expense / Category
-        else if (lowerQuery.includes("biggest") || lowerQuery.includes("highest") || lowerQuery.includes("top")) {
-            const expenses = transactions.filter(t => t.type === "expense");
-            const catTotals: Record<string, number> = {};
-            expenses.forEach(t => {
-                const cat = t.category || "Uncategorized";
-                catTotals[cat] = (catTotals[cat] || 0) + t.amount;
+            const res = await fetch("/api/ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: query, history })
             });
 
-            const sorted = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
-            if (sorted.length > 0) {
-                const [topCat, topAmount] = sorted[0];
-                responseText = `Your biggest expense category is **${topCat}** with ₹${topAmount.toLocaleString()} spent overall.`;
+            const data = await safeJson(res);
 
-                // Top 5 Chart
-                chartData = sorted.slice(0, 5).map(([name, value]) => ({ name, value }));
-                chartType = "bar";
-                chartTitle = "Top 5 Categories";
+            if (data.ok) {
+                const { text, chart } = data.data;
+
+                const newMessage: Message = {
+                    id: Date.now().toString(),
+                    role: "bot",
+                    text: text,
+                    chart: chart ? { type: chart.type, data: chart.data, title: chart.title } : undefined,
+                    timestamp: new Date(),
+                };
+
+                setMessages(prev => [...prev, newMessage]);
             } else {
-                responseText = "You don't have enough expense data yet.";
+                const errorText = data.data?.error || "Sorry, I encountered an error. Please try again later.";
+                const errorMsg: Message = {
+                    id: Date.now().toString(),
+                    role: "bot",
+                    text: errorText.includes("429") ? "I'm receiving too many requests right now. Please wait a minute and try again." : errorText,
+                    timestamp: new Date(),
+                };
+                setMessages(prev => [...prev, errorMsg]);
             }
+        } catch (e) {
+            console.error(e);
+            const errorMsg: Message = {
+                id: Date.now().toString(),
+                role: "bot",
+                text: "Sorry, something went wrong. Please try again.",
+                timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
+            setIsTyping(false);
         }
-
-        // INTENT: Specific Category Chart
-        else if (lowerQuery.includes("chart") || lowerQuery.includes("graph") || lowerQuery.includes("show me")) {
-            // Extract potential category
-            const categories = Array.from(new Set(transactions.map(t => t.category?.toLowerCase()).filter(Boolean)));
-            const foundCat = categories.find(c => lowerQuery.includes(c!));
-
-            if (foundCat) {
-                const catExpenses = transactions.filter(t => t.type === "expense" && t.category?.toLowerCase() === foundCat);
-                const total = catExpenses.reduce((sum, t) => sum + t.amount, 0);
-
-                if (catExpenses.length > 0) {
-                    responseText = `Here is your spending chart for **${foundCat}**. Total: ₹${total.toLocaleString()}.`;
-
-                    // Group by date
-                    const dailyData: Record<string, number> = {};
-                    catExpenses.forEach(t => {
-                        const dateStr = new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                        dailyData[dateStr] = (dailyData[dateStr] || 0) + t.amount;
-                    });
-
-                    chartData = Object.entries(dailyData).map(([name, value]) => ({ name, value }));
-                    chartType = "line";
-                    chartTitle = `${foundCat} Expenses`;
-                } else {
-                    responseText = `I couldn't find any expenses for ${foundCat}.`;
-                }
-            }
-        }
-
-        const newMessage: Message = {
-            id: Date.now().toString(),
-            role: "bot",
-            text: responseText,
-            chart: chartData ? { type: chartType!, data: chartData, title: chartTitle } : undefined,
-            timestamp: new Date(),
-        };
-
-        setMessages(prev => [...prev, newMessage]);
-        setIsTyping(false);
     };
 
     const handleSend = (e?: React.FormEvent) => {
