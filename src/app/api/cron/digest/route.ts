@@ -52,6 +52,13 @@ export async function GET(req: Request) {
 
             for (const reportType of reportsToSend) {
                 try {
+                    // Run the AI Agent for this user before generating reports
+                    // This ensures any new insights are generated and available (could be included in email later)
+                    if (reportType === 'monthly') {
+                        const { aiAgent } = await import('@/lib/ai-agent');
+                        await aiAgent.runAgent(user.email);
+                    }
+
                     let startDate: Date;
                     let endDate: Date;
                     let lastSentField: string;

@@ -12,6 +12,11 @@ const TransactionSchema = new Schema(
     isRecurring: { type: Boolean, default: false },
     frequency: { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly'], required: false },
     nextDueDate: { type: Date, required: false },
+    items: [{
+      name: { type: String },
+      qty: { type: Number },
+      price: { type: Number }
+    }],
   },
   { timestamps: true }
 );

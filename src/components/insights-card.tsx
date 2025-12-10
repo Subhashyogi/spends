@@ -113,65 +113,104 @@ export default function InsightsCard() {
   }, []);
 
   const fmt = (n: number) => new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(n);
-  const monthOverMonth = useMemo(() => {
-    if (lastMonthExpense <= 0 && thisMonthExpense <= 0) return null;
-    if (lastMonthExpense <= 0 && thisMonthExpense > 0) return `You started spending this month.`;
-    const change = ((thisMonthExpense - lastMonthExpense) / lastMonthExpense) * 100;
-    const sign = change > 0 ? "more" : change < 0 ? "less" : "the same as";
-    const pct = Math.abs(Math.round(change));
-    return `You spent ${pct}% ${sign} last month.`;
-  }, [thisMonthExpense, lastMonthExpense]);
 
-  const biggestCatLine = useMemo(() => {
-    if (!biggestCat) return null;
-    return `Your biggest category this month is ${biggestCat.category || "(uncategorized)"} (${fmt(biggestCat.total)}).`;
-  }, [biggestCat, currency]);
+  // Helper to create insight objects
+  const insightsList = useMemo(() => {
+    const list = [];
 
-  const paceLine = useMemo(() => {
+    if (lastMonthExpense > 0 && thisMonthExpense > 0) {
+      const change = ((thisMonthExpense - lastMonthExpense) / lastMonthExpense) * 100;
+      const sign = change > 0 ? "increase" : "decrease";
+      list.push({
+        icon: change > 0 ? "📈" : "📉",
+        title: "Spending Trend",
+        text: `You spent ${Math.abs(Math.round(change))}% ${change > 0 ? 'more' : 'less'} than last month.`,
+        type: change > 0 ? 'bad' : 'good'
+      });
+    } else if (thisMonthExpense > 0) {
+      list.push({ icon: "🚀", title: "Fresh Start", text: "You started spending this month.", type: 'neutral' });
+    }
+
+    if (biggestCat) {
+      list.push({
+        icon: "🏆",
+        title: "Top Category",
+        text: `Most money went to ${biggestCat.category} (${fmt(biggestCat.total)}).`,
+        type: 'neutral'
+      });
+    }
+
     const now = new Date();
     const elapsed = now.getDate();
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const daysInMonth = end.getDate();
-    if (elapsed <= 0) return null;
-    const netToDate = (thisMonthIncomeToDate - thisMonthExpenseToDate);
-    const projected = Math.round((netToDate / elapsed) * daysInMonth);
-    return `At this pace, you may save ${fmt(projected)} by month end.`;
-  }, [thisMonthIncomeToDate, thisMonthExpenseToDate, currency]);
+    if (elapsed > 0) {
+      const netToDate = (thisMonthIncomeToDate - thisMonthExpenseToDate);
+      const projected = Math.round((netToDate / elapsed) * end.getDate());
+      list.push({
+        icon: "💰",
+        title: "Savings Pace",
+        text: `Projected savings: ${fmt(projected)} by month end.`,
+        type: projected > 0 ? 'good' : 'bad'
+      });
+    }
 
-  const unusualLine = useMemo(() => {
-    if (!unusualSpending) return null;
-    return `Unusual spending detected: ${unusualSpending.description} (${fmt(unusualSpending.amount)}).`;
-  }, [unusualSpending, currency]);
+    if (unusualSpending) {
+      list.push({
+        icon: "⚠️",
+        title: "Unusual Expense",
+        text: `High spending specific to: ${unusualSpending.description} (${fmt(unusualSpending.amount)}).`,
+        type: 'bad'
+      });
+    }
 
-  const spikeLine = useMemo(() => {
-    if (!spikeCat) return null;
-    return `Spending on ${spikeCat.category} is up ${spikeCat.pct}% compared to last month.`;
-  }, [spikeCat]);
+    if (spikeCat) {
+      list.push({
+        icon: "📊",
+        title: "Category Spike",
+        text: `Spending on ${spikeCat.category} is up ${spikeCat.pct}%!`,
+        type: 'bad'
+      });
+    }
 
-  const lines = [monthOverMonth, biggestCatLine, paceLine, unusualLine, spikeLine].filter(Boolean) as string[];
+    return list;
+  }, [thisMonthExpense, lastMonthExpense, biggestCat, thisMonthIncomeToDate, thisMonthExpenseToDate, unusualSpending, spikeCat, currency]);
+
+
+  if (loading) return <div className="animate-pulse h-32 bg-gray-800/50 rounded-2xl mb-8"></div>;
+  if (insightsList.length === 0) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="rounded-2xl border bg-white/70 p-5 shadow-sm backdrop-blur dark:bg-zinc-900/60"
+      className="mb-8"
     >
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Insights</h3>
-        {loading && <span className="text-xs text-zinc-500">Loading…</span>}
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <span className="p-1 rounded bg-indigo-500/20 text-indigo-400">⚡</span>
+          Quick Analysis
+        </h3>
       </div>
-      {error ? (
-        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2 text-sm text-rose-600 dark:text-rose-400">{error}</div>
-      ) : (
-        <ul className="list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300">
-          {lines.length === 0 ? (
-            <li>No insights yet. Add some transactions.</li>
-          ) : (
-            lines.map((l, i) => <li key={i}>{l}</li>)
-          )}
-        </ul>
-      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {insightsList.map((item, i) => (
+          <div key={i} className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gray-900/40 p-4 transition-all hover:bg-gray-800/60 hover:border-indigo-500/20 backdrop-blur-sm">
+            <div className="flex gap-4">
+              <div className="text-2xl">{item.icon}</div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-200 mb-1">{item.title}</h4>
+                <p className="text-xs text-gray-400 leading-relaxed">{item.text}</p>
+              </div>
+            </div>
+            {/* Subtle gradient line at bottom */}
+            <div className={`absolute bottom-0 left-0 h-1 w-full opacity-30 
+                    ${item.type === 'good' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' :
+                item.type === 'bad' ? 'bg-gradient-to-r from-rose-500 to-orange-500' :
+                  'bg-gradient-to-r from-blue-500 to-indigo-500'}`} />
+          </div>
+        ))}
+      </div>
     </motion.div>
   );
 }

@@ -26,7 +26,7 @@ export type LucideIconName =
   | 'Banknote'
   | 'Plus';
 
-const registry: Record<LucideIconName, ComponentType<any>> = {
+export const icons: Record<LucideIconName, ComponentType<any>> = {
   Tag,
   Utensils,
   Bus,
@@ -42,5 +42,5 @@ const registry: Record<LucideIconName, ComponentType<any>> = {
 
 export function getLucideIcon(name?: string): ComponentType<any> {
   if (!name) return Tag;
-  return (registry as any)[name] ?? Tag;
+  return (icons as any)[name] ?? Tag;
 }

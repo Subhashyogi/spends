@@ -3,9 +3,16 @@
 import { useSession, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import SummaryCards from "@/components/summary-cards";
+import InsightsCenter from "@/components/insights-center";
 import InsightsCard from "@/components/insights-card";
+import HealthScoreCard from "@/components/health-score-card";
+import BehaviorCard from "@/components/behavior-card";
+import GoalPlanner from "@/components/goal-planner";
 import FinanceChatbot from "@/components/finance-chatbot";
 
+import NetworkStatus from "@/components/network-status";
+import StoryTray from "@/components/stories/story-tray";
+import ChallengesBoard from "@/components/challenges-board";
 import SplitDashboard from "@/components/split-dashboard";
 import FriendsManager from "@/components/friends-manager";
 import TransactionForm from "@/components/transaction-form";
@@ -125,19 +132,40 @@ export default function DashboardClient() {
   return (
     <AppLockProvider>
       <div className="min-h-screen bg-zinc-50 pb-20 dark:bg-transparent relative overflow-hidden">
+        <NetworkStatus />
         <div className="pointer-events-none absolute inset-0 flex justify-center">
           <div className="h-[500px] w-[500px] rounded-full bg-indigo-500/10 blur-[100px] dark:bg-indigo-500/20" />
         </div>
         <main className="relative mx-auto w-full px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-8">
+
+            {/* Stories Row */}
+            <StoryTray />
+
             {/* Stats Overview */}
             <SummaryCards />
+            <div className="flex justify-end">
+              <a href="/analytics" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                View Advanced Analytics →
+              </a>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <InsightsCenter />
+              <div className="space-y-6">
+                <HealthScoreCard />
+                <BehaviorCard />
+              </div>
+            </div>
+
+            <ChallengesBoard />
 
             <InsightsCard />
 
             <div className="grid gap-8 lg:grid-cols-2">
               {/* Left Column: Transaction Form */}
               <div className="space-y-8">
+                <GoalPlanner />
                 <TransactionForm
                   onTransactionAdded={refreshData}
                   categories={categories}

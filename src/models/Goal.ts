@@ -1,16 +1,19 @@
-import { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, Model } from 'mongoose';
 
 const GoalSchema = new Schema(
     {
         userId: { type: String, required: true, index: true },
-        name: { type: String, required: true },
-        targetAmount: { type: Number, required: true, min: 1 },
-        currentAmount: { type: Number, default: 0, min: 0 },
-        deadline: { type: Date },
-        color: { type: String, default: '#6366f1' }, // indigo-500
+        title: { type: String, required: true },
+        targetAmount: { type: Number, required: true },
+        currentAmount: { type: Number, default: 0 },
+        deadline: { type: Date, required: false },
+        status: { type: String, enum: ['active', 'completed', 'cancelled'], default: 'active' },
+        color: { type: String, default: 'indigo' }, // For UI theming
     },
     { timestamps: true }
 );
 
-const Goal = models.Goal || model('Goal', GoalSchema);
+// Prevent overwrite
+const Goal: Model<any> = mongoose.models.Goal || mongoose.model('Goal', GoalSchema);
+
 export default Goal;
