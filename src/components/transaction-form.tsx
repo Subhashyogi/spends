@@ -106,6 +106,7 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
 
         setSuccess(true);
         resetForm();
+        window.dispatchEvent(new Event("transactionsUpdated"));
         if (onTransactionAdded) onTransactionAdded();
       } catch (err: any) {
         setError(err.message);
@@ -123,6 +124,7 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
       setSuccess(true);
       resetForm();
       setLoading(false);
+      window.dispatchEvent(new Event("transactionsUpdated"));
       if (onTransactionAdded) onTransactionAdded();
     }
   };

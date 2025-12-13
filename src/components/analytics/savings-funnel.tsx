@@ -20,7 +20,7 @@ export default function SavingsFunnel({ funnelData, riskScore }: FunnelProps) {
     return (
         <div className="grid gap-6 md:grid-cols-2">
             {/* Funnel Chart */}
-            <div className="rounded-3xl border border-zinc-200/50 bg-white/50 p-6 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-900/50">
+            <div className="rounded-3xl border border-zinc-200/50 bg-white/50 p-6 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-transparent">
                 <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                     Cash Flow
                 </h3>
@@ -41,7 +41,7 @@ export default function SavingsFunnel({ funnelData, riskScore }: FunnelProps) {
             </div>
 
             {/* Overdraft Risk Meter */}
-            <div className="rounded-3xl border border-zinc-200/50 bg-white/50 p-6 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-900/50 flex flex-col items-center justify-center">
+            <div className="rounded-3xl border border-zinc-200/50 bg-white/50 p-6 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-transparent flex flex-col items-center justify-center">
                 <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                     Overdraft Risk
                 </h3>

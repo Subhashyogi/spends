@@ -134,7 +134,7 @@ export default function PredictorCard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="col-span-full rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/50 to-white p-6 shadow-sm backdrop-blur-xl dark:border-indigo-500/10 dark:from-indigo-950/10 dark:to-zinc-900/60"
+            className="col-span-full rounded-3xl border border-zinc-200/50 bg-transparent p-6 dark:border-zinc-800/50"
         >
             <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">

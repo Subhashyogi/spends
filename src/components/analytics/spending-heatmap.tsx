@@ -25,7 +25,7 @@ export default function SpendingHeatmap({ data }: HeatmapProps) {
     };
 
     return (
-        <div className="rounded-3xl border border-zinc-200/50 bg-white/50 p-6 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-900/50">
+        <div className="rounded-3xl border border-zinc-200/50 bg-white/50 p-6 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-transparent">
             <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                 Spending Intensity (Last 4 Months)
             </h3>

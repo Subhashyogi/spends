@@ -143,7 +143,7 @@ export default function DashboardClient() {
             <StoryTray />
 
             {/* Stats Overview */}
-            <SummaryCards />
+            <SummaryCards transactions={transactions} />
             <div className="flex justify-end">
               <a href="/analytics" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
                 View Advanced Analytics →

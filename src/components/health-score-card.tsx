@@ -9,7 +9,7 @@ export default function HealthScoreCard() {
     const [tips, setTips] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    const fetchScore = () => {
         fetch("/api/analytics/score")
             .then(res => res.json())
             .then(data => {
@@ -19,6 +19,12 @@ export default function HealthScoreCard() {
                 setLoading(false);
             })
             .catch(err => console.error(err));
+    };
+
+    useEffect(() => {
+        fetchScore();
+        window.addEventListener("transactionsUpdated", fetchScore);
+        return () => window.removeEventListener("transactionsUpdated", fetchScore);
     }, []);
 
     const getColor = (s: number) => {

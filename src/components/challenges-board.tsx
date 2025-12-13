@@ -25,6 +25,8 @@ export default function ChallengesBoard() {
 
     useEffect(() => {
         fetchChallenges();
+        window.addEventListener("transactionsUpdated", fetchChallenges);
+        return () => window.removeEventListener("transactionsUpdated", fetchChallenges);
     }, []);
 
     useEffect(() => {

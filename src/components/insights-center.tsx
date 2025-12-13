@@ -48,7 +48,13 @@ export default function InsightsCenter() {
     useEffect(() => {
         fetchInsights();
         const interval = setInterval(fetchInsights, 60000);
-        return () => clearInterval(interval);
+
+        window.addEventListener("transactionsUpdated", fetchInsights);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener("transactionsUpdated", fetchInsights);
+        };
     }, []);
 
     if (loading) return null; // Don't show anything while loading to avoid layout shift

@@ -21,6 +21,8 @@ export default function GoalPlanner() {
 
     useEffect(() => {
         fetchGoals();
+        window.addEventListener("transactionsUpdated", fetchGoals);
+        return () => window.removeEventListener("transactionsUpdated", fetchGoals);
     }, []);
 
     const handleSubmit = async (e: any) => {
