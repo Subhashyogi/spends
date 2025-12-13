@@ -3,7 +3,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.spends.app',
   appName: 'Spends',
-  webDir: 'public'
+  webDir: 'mobile-assets',
+  // server: {
+  //   url: 'https://your-deployed-app.com', // 👈 REPLACE THIS WITH YOUR VERCEL/DEPLOYMENT URL
+  //   cleartext: true
+  // },
 };
 
 export default config;
