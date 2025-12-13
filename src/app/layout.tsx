@@ -30,6 +30,18 @@ export const metadata: Metadata = {
     icon: "/spends.svg",
     apple: "/spends.svg",
   },
+  themeColor: "#4f46e5",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Spends",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false, // Prevents zooming, feels like native app
+  },
 };
 
 export default function RootLayout({
