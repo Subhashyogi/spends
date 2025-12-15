@@ -147,9 +147,9 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
       className="w-full max-w-2xl mx-auto overflow-hidden bg-white border border-zinc-200 shadow-xl dark:bg-zinc-950 dark:border-zinc-800 rounded-3xl"
     >
       {/* 1. Header & Type Switcher */}
-      <div className="relative p-6 pb-2">
+      <div className="relative p-6 pb-2 flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Segmented Control */}
-        <div className="relative grid grid-cols-2 p-1 mx-auto bg-zinc-100 rounded-full w-64 dark:bg-zinc-900">
+        <div className="relative grid grid-cols-2 p-1 mx-auto sm:mx-0 bg-zinc-100 rounded-full w-64 dark:bg-zinc-900">
           <motion.div
             className="absolute inset-y-1 left-1 w-[calc(50%-4px)] bg-white rounded-full shadow-sm dark:bg-zinc-800"
             animate={{ x: type === 'income' ? 0 : '100%', translateX: type === 'income' ? 0 : 4 }}
@@ -171,8 +171,8 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
           </button>
         </div>
 
-        {/* Smart Tools (Absolute Position) */}
-        <div className="absolute right-6 top-6 flex gap-2">
+        {/* Smart Tools */}
+        <div className="flex gap-2">
           <button
             onClick={() => { setSmsMode(!smsMode); setReceiptMode(false); }}
             className="p-2 text-zinc-400 transition-colors bg-zinc-50 rounded-xl hover:text-emerald-600 hover:bg-emerald-50 dark:bg-zinc-900 dark:hover:bg-emerald-900/20"
@@ -229,21 +229,21 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
         <div className="relative flex flex-col items-center justify-center py-6">
           <label className="text-xs font-medium uppercase tracking-wider text-zinc-400 mb-2">Enter Amount</label>
           <div className="relative flex items-center justify-center w-full gap-1">
-            <span className="text-4xl font-light text-zinc-300 dark:text-zinc-600 pb-1">₹</span>
+            <span className="text-3xl sm:text-4xl font-light text-zinc-300 dark:text-zinc-600 pb-1">₹</span>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
               style={{ width: amount ? `${amount.length + 1}ch` : '2ch' }}
-              className="h-16 text-5xl font-bold text-center bg-transparent border-none outline-none text-zinc-900 placeholder:text-zinc-200 dark:text-white dark:placeholder:text-zinc-800 focus:ring-0 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none min-w-[2ch] max-w-full"
+              className="h-16 text-4xl sm:text-5xl font-bold text-center bg-transparent border-none outline-none text-zinc-900 placeholder:text-zinc-200 dark:text-white dark:placeholder:text-zinc-800 focus:ring-0 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none min-w-[2ch] max-w-full"
               autoFocus
             />
           </div>
         </div>
 
         {/* Date & Account Row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="relative group">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <Calendar className="w-4 h-4 text-zinc-400 group-hover:text-indigo-500 transition-colors" />

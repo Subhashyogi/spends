@@ -1,7 +1,8 @@
-import Transaction from "@/models/Transaction";
+import User from "@/models/User";
 import connectToDatabase from "@/lib/db";
 import { startOfMonth, subMonths, endOfMonth } from "date-fns";
 import { financialScore } from "@/lib/financial-score";
+import mongoose from "mongoose";
 
 export interface StorySlide {
     id: string;
@@ -20,20 +21,27 @@ export const storiesGenerator = {
         const start = startOfMonth(now);
         const lastMonthStart = startOfMonth(subMonths(now, 1));
         const lastMonthEnd = endOfMonth(subMonths(now, 1));
+        const userObjectId = new mongoose.Types.ObjectId(userId);
 
-        const currentMonthTxs = await Transaction.aggregate([
-            { $match: { userId, type: 'expense', date: { $gte: start } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
+        const currentMonthTxs = await User.aggregate([
+            { $match: { _id: userObjectId } },
+            { $unwind: "$transactions" },
+            { $match: { "transactions.type": 'expense', "transactions.date": { $gte: start } } },
+            { $group: { _id: null, total: { $sum: "$transactions.amount" } } }
         ]);
 
-        const lastMonthTxs = await Transaction.aggregate([
-            { $match: { userId, type: 'expense', date: { $gte: lastMonthStart, $lte: lastMonthEnd } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
+        const lastMonthTxs = await User.aggregate([
+            { $match: { _id: userObjectId } },
+            { $unwind: "$transactions" },
+            { $match: { "transactions.type": 'expense', "transactions.date": { $gte: lastMonthStart, $lte: lastMonthEnd } } },
+            { $group: { _id: null, total: { $sum: "$transactions.amount" } } }
         ]);
 
-        const topCategory = await Transaction.aggregate([
-            { $match: { userId, type: 'expense', date: { $gte: start } } },
-            { $group: { _id: "$category", total: { $sum: "$amount" } } },
+        const topCategory = await User.aggregate([
+            { $match: { _id: userObjectId } },
+            { $unwind: "$transactions" },
+            { $match: { "transactions.type": 'expense', "transactions.date": { $gte: start } } },
+            { $group: { _id: "$transactions.category", total: { $sum: "$transactions.amount" } } },
             { $sort: { total: -1 } },
             { $limit: 1 }
         ]);
@@ -44,36 +52,44 @@ export const storiesGenerator = {
         const slides: StorySlide[] = [];
 
         // 1. Overview Slide
-        slides.push({
-            id: 'overview',
-            type: 'overview',
-            title: 'This Month So Far',
-            value: `₹${currentTotal.toLocaleString()}`,
-            subtext: 'Total Spent',
-            color: 'from-blue-500 to-indigo-600',
-            icon: 'calendar'
-        });
+        if (currentTotal > 0 || lastTotal > 0) { // Only show if there is some activity
+            slides.push({
+                id: 'overview',
+                type: 'overview',
+                title: 'This Month So Far',
+                value: `₹${currentTotal.toLocaleString()}`,
+                subtext: 'Total Spent',
+                color: 'from-blue-500 to-indigo-600',
+                icon: 'calendar'
+            });
+        }
 
         // 2. Trend Slide
-        let trendText = "Consistent spending";
-        let trendColor = 'from-gray-500 to-zinc-600';
-        if (lastTotal > 0) {
-            const diff = currentTotal - lastTotal; // This isn't fair comparison (full prev month vs current partial). 
-            // Better: Trend vs Average? Or just show the raw difference?
-            // Let's assume user wants to know pace.
-            // Simplified: "Last month you spent X total"
-            trendText = `vs ₹${lastTotal.toLocaleString()} last month`;
-            trendColor = 'from-purple-500 to-pink-600';
+        if (currentTotal > 0 && lastTotal > 0) {
+            let trendText = "Consistent spending";
+            let trendColor = 'from-gray-500 to-zinc-600';
+
+            if (currentTotal > lastTotal) {
+                trendText = `+${Math.round((currentTotal - lastTotal) / lastTotal * 100)}% vs last month`;
+                trendColor = 'from-pink-500 to-rose-500'; // High spending
+            } else if (currentTotal < lastTotal) {
+                trendText = `${Math.round((lastTotal - currentTotal) / lastTotal * 100)}% less than last month`;
+                trendColor = 'from-emerald-500 to-teal-500'; // Savings
+            } else {
+                trendText = `Same as last month`;
+                trendColor = 'from-blue-500 to-cyan-500';
+            }
+
+            slides.push({
+                id: 'trend',
+                type: 'trend',
+                title: 'Monthly Trend',
+                value: trendText,
+                subtext: 'vs Last Month',
+                color: trendColor,
+                icon: 'trending-up'
+            });
         }
-        slides.push({
-            id: 'trend',
-            type: 'trend',
-            title: 'Monthly Trend',
-            value: trendText,
-            subtext: 'Keep it up!',
-            color: trendColor,
-            icon: 'trending-up'
-        });
 
         // 3. Top Category Slide
         if (topCategory.length > 0) {

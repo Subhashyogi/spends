@@ -7,8 +7,9 @@ import AuthButtons from "@/components/auth-buttons";
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isChat = pathname?.startsWith("/chat");
+    const isAuth = pathname?.startsWith("/auth") || pathname?.startsWith("/register");
 
-    if (isChat) {
+    if (isChat || isAuth) {
         return <>{children}</>;
     }
 

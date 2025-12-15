@@ -186,7 +186,7 @@ export default function RegisterPage() {
             <div className="mt-8 text-center">
               <p className="text-xs text-zinc-500">
                 Already have an account?{" "}
-                <Link href="/api/auth/signin" className="font-medium text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">
+                <Link href="/auth/signin" className="font-medium text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">
                   Sign in
                 </Link>
               </p>

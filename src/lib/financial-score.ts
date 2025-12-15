@@ -1,7 +1,7 @@
-import Transaction from "@/models/Transaction";
-import Budget from "@/models/Budget";
+import User from "@/models/User";
 import connectToDatabase from "@/lib/db";
 import { startOfMonth, endOfMonth, subMonths } from "date-fns";
+import mongoose from "mongoose";
 
 export const financialScore = {
     calculate: async (userId: string) => {
@@ -10,19 +10,29 @@ export const financialScore = {
         const start = startOfMonth(now);
         const end = endOfMonth(now);
 
+        const userObjectId = new mongoose.Types.ObjectId(userId);
+
+        // Common pipeline stages
+        const matchUser = { $match: { _id: userObjectId } };
+
         // 1. Savings Rate (30 pts)
         // Target: Save 20% of income
-        const income = await Transaction.aggregate([
-            { $match: { userId, type: 'income', date: { $gte: start, $lte: end } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
-        ]);
-        const expense = await Transaction.aggregate([
-            { $match: { userId, type: 'expense', date: { $gte: start, $lte: end } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
+        const incomeAgg = await User.aggregate([
+            matchUser,
+            { $unwind: "$transactions" },
+            { $match: { "transactions.type": "income", "transactions.date": { $gte: start, $lte: end } } },
+            { $group: { _id: null, total: { $sum: "$transactions.amount" } } }
         ]);
 
-        const totalIncome = income[0]?.total || 0;
-        const totalExpense = expense[0]?.total || 0;
+        const expenseAgg = await User.aggregate([
+            matchUser,
+            { $unwind: "$transactions" },
+            { $match: { "transactions.type": "expense", "transactions.date": { $gte: start, $lte: end } } },
+            { $group: { _id: null, total: { $sum: "$transactions.amount" } } }
+        ]);
+
+        const totalIncome = incomeAgg[0]?.total || 0;
+        const totalExpense = expenseAgg[0]?.total || 0;
 
         let savingsScore = 0;
         let savingsRate = 0;
@@ -36,16 +46,26 @@ export const financialScore = {
 
         // 2. Budget Discipline (25 pts)
         // % of budgets not exceeded
-        const budgets = await Budget.find({ userId, month: now.toISOString().slice(0, 7) });
+        // We need updates budgets fetch logic too since they are embedded
+        const budgetsAgg = await User.aggregate([
+            matchUser,
+            { $unwind: "$budgets" },
+            { $match: { "budgets.month": now.toISOString().slice(0, 7) } },
+            { $replaceRoot: { newRoot: "$budgets" } }
+        ]);
+        const budgets = budgetsAgg || [];
+
         let budgetScore = 25; // Default to max if no budgets set (benefit of doubt)
         if (budgets.length > 0) {
             let hitCount = 0;
             for (const b of budgets) {
-                const catSpent = await Transaction.aggregate([
-                    { $match: { userId, type: 'expense', category: b.category, date: { $gte: start, $lte: end } } },
-                    { $group: { _id: null, total: { $sum: "$amount" } } }
+                const catSpentAgg = await User.aggregate([
+                    matchUser,
+                    { $unwind: "$transactions" },
+                    { $match: { "transactions.type": "expense", "transactions.category": b.category, "transactions.date": { $gte: start, $lte: end } } },
+                    { $group: { _id: null, total: { $sum: "$transactions.amount" } } }
                 ]);
-                const spent = catSpent[0]?.total || 0;
+                const spent = catSpentAgg[0]?.total || 0;
                 if (spent <= b.amount) hitCount++;
             }
             budgetScore = (hitCount / budgets.length) * 25;
@@ -53,20 +73,30 @@ export const financialScore = {
 
         // 3. Liquidity (15 pts)
         // Positive balance at end of month (simplified: income > expense)
-        // Actually this is similar to savings but binary
         let liquidityScore = 0;
         if (totalIncome > totalExpense) liquidityScore = 15;
         else if (totalIncome > 0 && totalExpense < totalIncome * 1.05) liquidityScore = 5; // Close call
 
         // 4. Habits (Needs vs Wants) (15 pts)
         // Simple heuristic: If "Shopping" + "Entertainment" < 30% of expense
-        // In a real app, users would tag categories as Needs/Wants. Here we hardcode common ones.
         const wants = ["shopping", "entertainment", "dining", "travel"];
-        const wantsSpent = await Transaction.aggregate([
-            { $match: { userId, type: 'expense', category: { $in: wants.map(w => new RegExp(w, 'i')) }, date: { $gte: start, $lte: end } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
+        // Create regex for case insensitive match
+        const wantsRegex = wants.map(w => new RegExp(w, 'i'));
+
+        const wantsSpentAgg = await User.aggregate([
+            matchUser,
+            { $unwind: "$transactions" },
+            {
+                $match: {
+                    "transactions.type": "expense",
+                    "transactions.category": { $in: wantsRegex },
+                    "transactions.date": { $gte: start, $lte: end }
+                }
+            },
+            { $group: { _id: null, total: { $sum: "$transactions.amount" } } }
         ]);
-        const totalWants = wantsSpent[0]?.total || 0;
+
+        const totalWants = wantsSpentAgg[0]?.total || 0;
         let habitScore = 15;
         if (totalExpense > 0) {
             const wantsRatio = totalWants / totalExpense;
@@ -79,11 +109,15 @@ export const financialScore = {
         // Simplified: Did you spend within +/- 20% of last month?
         const lastMonthStart = startOfMonth(subMonths(now, 1));
         const lastMonthEnd = endOfMonth(subMonths(now, 1));
-        const lastMonthExpense = await Transaction.aggregate([
-            { $match: { userId, type: 'expense', date: { $gte: lastMonthStart, $lte: lastMonthEnd } } },
-            { $group: { _id: null, total: { $sum: "$amount" } } }
+
+        const lastMonthExpenseAgg = await User.aggregate([
+            matchUser,
+            { $unwind: "$transactions" },
+            { $match: { "transactions.type": "expense", "transactions.date": { $gte: lastMonthStart, $lte: lastMonthEnd } } },
+            { $group: { _id: null, total: { $sum: "$transactions.amount" } } }
         ]);
-        const prevTotal = lastMonthExpense[0]?.total || 0;
+
+        const prevTotal = lastMonthExpenseAgg[0]?.total || 0;
 
         let stabilityScore = 15;
         if (prevTotal > 0 && totalExpense > 0) {
@@ -91,6 +125,9 @@ export const financialScore = {
             const pctDiff = diff / prevTotal;
             if (pctDiff > 0.5) stabilityScore = 5; // Huge swing
             else if (pctDiff > 0.2) stabilityScore = 10;
+        } else if (prevTotal === 0 && totalExpense > 0) {
+            // First month or previous month empty
+            stabilityScore = 15; // Give benefit of doubt for new users
         }
 
         const totalScore = Math.min(100, Math.round(savingsScore + budgetScore + liquidityScore + habitScore + stabilityScore));
@@ -100,7 +137,8 @@ export const financialScore = {
         if (savingsScore < 20) tips.push("Try to save at least 20% of your income.");
         if (budgetScore < 15) tips.push("You exceeded several budgets. Review your limits.");
         if (habitScore < 10) tips.push("High spending on 'Wants'. Consider cutting back on dining/shopping.");
-        if (liquidityScore === 0) tips.push("You are spending more than you earn!");
+        if (liquidityScore === 0 && totalExpense > 0) tips.push("You are spending more than you earn!");
+        if (totalScore >= 80) tips.push("Great job! Keep up the good work.");
 
         return {
             score: totalScore,

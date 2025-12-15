@@ -87,11 +87,13 @@ export default function SessionGuard({ children }: { children: React.ReactNode }
     if (loading) return null; // Or a loading spinner if you prefer
 
     // If unauthenticated or within limit, render children
-    if (status !== "authenticated" || sessions.length <= 3) {
+    const uniqueDeviceCount = new Set(sessions.map(s => s.device)).size;
+
+    if (status !== "authenticated" || uniqueDeviceCount <= 3) {
         return <>{children}</>;
     }
 
-    // If we are here, we have > 3 sessions. Show blocking screen.
+    // If we are here, we have > 3 devices. Show blocking screen.
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-50/95 p-4 backdrop-blur-sm dark:bg-zinc-950/95">
             <div className="w-full max-w-lg space-y-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
@@ -101,8 +103,8 @@ export default function SessionGuard({ children }: { children: React.ReactNode }
                     </div>
                     <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Device Limit Exceeded</h2>
                     <p className="text-sm text-zinc-500">
-                        You are logged in on {sessions.length} devices. The limit is 3.
-                        Please log out of at least {sessions.length - 3} device{sessions.length - 3 > 1 ? 's' : ''} to continue.
+                        You are logged in on {uniqueDeviceCount} devices. The limit is 3.
+                        Please log out of at least {uniqueDeviceCount - 3} device{uniqueDeviceCount - 3 > 1 ? 's' : ''} to continue.
                     </p>
                 </div>
 
