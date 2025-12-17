@@ -51,7 +51,7 @@ export default function BudgetProgress({ budgets, transactions, categories }: Bu
 
     if (budgetStatus.length === 0) {
         return (
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="glass rounded-3xl p-6">
                 <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">Monthly Budgets</h3>
                 <p className="text-sm text-zinc-500">No budgets set for this month.</p>
             </div>
@@ -59,7 +59,7 @@ export default function BudgetProgress({ budgets, transactions, categories }: Bu
     }
 
     return (
-        <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="glass rounded-3xl p-6">
             <h3 className="mb-6 text-lg font-semibold text-zinc-900 dark:text-zinc-100">Monthly Budgets</h3>
             <div className="space-y-6">
                 {budgetStatus.map((item) => (

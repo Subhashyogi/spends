@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Flame, Target, Shield, Users, ArrowRight, Loader2 } from "lucide-react";
+import { Trophy, Flame, Target, Shield, Users, ArrowRight, Loader2, Sparkles, X } from "lucide-react";
 
 interface Challenge {
     _id: string;
@@ -22,6 +22,10 @@ export default function ChallengesBoard() {
     const [leaderboardView, setLeaderboardView] = useState<'friends' | 'world'>('friends');
     const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
     const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+    // AI State
+    const [aiLoading, setAiLoading] = useState(false);
+    const [proposedChallenge, setProposedChallenge] = useState<any | null>(null);
 
     useEffect(() => {
         fetchChallenges();
@@ -74,6 +78,56 @@ export default function ChallengesBoard() {
         }
     };
 
+    const generateAIChallenge = async () => {
+        setAiLoading(true);
+        try {
+            const res = await fetch('/api/ai/generate-challenge', { method: 'POST' });
+            const data = await res.json();
+            if (data.challenge) {
+                setProposedChallenge(data.challenge);
+            } else {
+                alert("AI couldn't find a challenge right now. Try spending more!");
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    const acceptAIChallenge = async () => {
+        if (!proposedChallenge) return;
+        setProposedChallenge(null); // Optimistic close
+        try {
+            // We reuse the POST /api/challenges logic but likely need to handle custom payloads
+            // If the existing API expects { type }, we might need to update it or send extra data.
+            // For now, let's assume valid types are supported or the backend handles it.
+            // But wait, our API likely checks 'type' against enum. 
+            // The AI returns one of the enum types. 
+
+            // We need to pass the custom metadata (targetValue, etc) to override defaults potentially.
+            // Let's assume the backend supports overrides or we send the whole object.
+            // Since I am only editing frontend here, I will send the whole object and hope backend uses it, 
+            // OR I update the backend. But let's verify if 'type' matches 'no_spend' etc.
+
+            await fetch('/api/challenges', {
+                method: 'POST',
+                body: JSON.stringify({
+                    type: proposedChallenge.type,
+                    // If backend allows custom params:
+                    customTitle: proposedChallenge.title,
+                    customTarget: proposedChallenge.targetValue,
+                    customDesc: proposedChallenge.description,
+                    endDate: proposedChallenge.endDate
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            await fetchChallenges();
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const active = challenges.filter(c => c.status === 'active');
     // const completed = challenges.filter(c => c.status === 'completed');
 
@@ -93,10 +147,47 @@ export default function ChallengesBoard() {
                     <Trophy className="h-5 w-5 text-yellow-500" />
                     Money Challenges
                 </h2>
-                <span className="text-xs font-medium text-zinc-500 rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-1">
-                    Season 1
-                </span>
+                <div className="flex gap-2">
+                    <button
+                        onClick={generateAIChallenge}
+                        disabled={aiLoading}
+                        className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full hover:from-purple-600 hover:to-indigo-700 transition-all shadow-sm"
+                    >
+                        {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                        AI Quest
+                    </button>
+                    <span className="text-xs font-medium text-zinc-500 rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-1 flex items-center">
+                        Season 1
+                    </span>
+                </div>
             </div>
+
+            {/* AI Proposal Modal/Card */}
+            {proposedChallenge && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl border border-purple-200 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-800 relative">
+                    <button onClick={() => setProposedChallenge(null)} className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600"><X className="w-4 h-4" /></button>
+                    <div className="flex gap-3">
+                        <div className="mt-1 p-2 bg-purple-100 dark:bg-purple-800 rounded-xl text-purple-600 dark:text-purple-300">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">{proposedChallenge.title}</h3>
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">{proposedChallenge.description}</p>
+                            <div className="mt-3 flex gap-2">
+                                <button
+                                    onClick={acceptAIChallenge}
+                                    className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700"
+                                >
+                                    Accept Quest
+                                </button>
+                                <div className="px-3 py-2 text-xs font-medium text-zinc-500 bg-white/50 dark:bg-zinc-800/50 rounded-lg">
+                                    Target: ₹{proposedChallenge.targetValue}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Active Challenges */}
             {active.length > 0 && (
@@ -118,7 +209,7 @@ export default function ChallengesBoard() {
                         }
 
                         return (
-                            <motion.div layout key={c._id} className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                            <motion.div layout key={c._id} className="relative overflow-hidden glass rounded-2xl p-4">
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
                                         <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">{c.title}</h3>
@@ -153,12 +244,12 @@ export default function ChallengesBoard() {
                                 key={t.type}
                                 onClick={() => joinChallenge(t.type)}
                                 disabled={!!joining}
-                                className="group flex flex-col items-start gap-3 rounded-2xl border border-zinc-200 bg-white p-4 transition-all hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+                                className="group glass flex flex-col items-start gap-3 rounded-2xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg text-left"
                             >
                                 <div className={`rounded-xl p-2.5 ${t.bg} ${t.color}`}>
                                     <t.icon className="h-5 w-5" />
                                 </div>
-                                <div className="text-left">
+                                <div className="text-left w-full">
                                     <h4 className="font-medium text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                         {t.title}
                                     </h4>
@@ -181,7 +272,7 @@ export default function ChallengesBoard() {
             )}
 
             {/* Leaderboard Section */}
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="glass rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-zinc-500" />

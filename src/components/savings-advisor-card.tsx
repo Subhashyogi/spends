@@ -105,7 +105,7 @@ export default function SavingsAdvisorCard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/50 to-white p-6 shadow-sm backdrop-blur-xl dark:border-emerald-500/10 dark:from-emerald-950/10 dark:to-zinc-900/60"
+            className="glass rounded-3xl p-6 border-emerald-500/10"
         >
             <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
@@ -119,7 +119,7 @@ export default function SavingsAdvisorCard() {
 
             <div className="grid gap-4 sm:grid-cols-2">
                 {/* Weekly Target */}
-                <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-100 dark:bg-zinc-900 dark:ring-zinc-800">
+                <div className="glass rounded-2xl p-4">
                     <div className="mb-2 flex items-center gap-2 text-xs font-medium text-emerald-600">
                         <PiggyBank className="h-3.5 w-3.5" /> Recommended Weekly Save
                     </div>
@@ -132,7 +132,7 @@ export default function SavingsAdvisorCard() {
                 </div>
 
                 {/* Expense Cut Tip */}
-                <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-100 dark:bg-zinc-900 dark:ring-zinc-800">
+                <div className="glass rounded-2xl p-4">
                     <div className="mb-2 flex items-center gap-2 text-xs font-medium text-rose-500">
                         <TrendingDown className="h-3.5 w-3.5" /> Potential Cut
                     </div>
@@ -146,7 +146,7 @@ export default function SavingsAdvisorCard() {
             </div>
 
             {/* Optimal Pattern Analysis */}
-            <div className="mt-6 rounded-2xl bg-white/50 p-4 ring-1 ring-zinc-100 dark:bg-zinc-900/50 dark:ring-zinc-800">
+            <div className="glass mt-6 rounded-2xl p-4">
                 <h4 className="mb-3 flex items-center gap-2 text-xs font-medium text-zinc-500">
                     <Lightbulb className="h-3.5 w-3.5" /> Spending Pattern Analysis
                 </h4>

@@ -115,7 +115,7 @@ export default function CategoryRadarChart() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl border border-zinc-200/50 bg-transparent p-6 dark:border-zinc-800/50"
+            className="glass rounded-3xl p-6"
         >
             <div className="mb-2 flex items-center justify-between">
                 <div>

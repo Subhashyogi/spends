@@ -88,7 +88,7 @@ export default function SecuritySettings() {
     }
 
     return (
-        <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="glass rounded-3xl p-6">
             <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                     <Shield className="h-5 w-5 text-indigo-500" />
@@ -102,7 +102,7 @@ export default function SecuritySettings() {
             </div>
 
             <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                <div className="glass flex items-center justify-between rounded-xl p-4">
                     <div>
                         <div className="font-medium text-zinc-900 dark:text-zinc-100">App Lock</div>
                         <div className="text-sm text-zinc-500">Require PIN to open app</div>
@@ -112,7 +112,7 @@ export default function SecuritySettings() {
                         <div className="flex gap-2">
                             <button
                                 onClick={startSetPin}
-                                className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                                className="glass rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300"
                             >
                                 Change PIN
                             </button>
@@ -135,7 +135,7 @@ export default function SecuritySettings() {
                 </div>
 
                 {mode === 'set' && (
-                    <form onSubmit={handleSubmit} className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 dark:border-indigo-900/30 dark:bg-indigo-900/10">
+                    <form onSubmit={handleSubmit} className="glass rounded-xl border-indigo-200/50 p-4 ring-1 ring-indigo-500/20">
                         <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                             {step === 'verify' ? "Enter Current PIN" : "Enter New 4-digit PIN"}
                         </label>
@@ -145,7 +145,7 @@ export default function SecuritySettings() {
                                 maxLength={4}
                                 value={pin}
                                 onChange={e => setPin(e.target.value.replace(/[^0-9]/g, ''))}
-                                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-center text-lg tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800"
+                                className="glass w-full rounded-lg px-3 py-2 text-center text-lg tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                                 placeholder="••••"
                                 autoFocus
                             />
@@ -163,7 +163,7 @@ export default function SecuritySettings() {
                                     setPin("");
                                     setError(null);
                                 }}
-                                className="rounded-lg border border-zinc-200 bg-white px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                                className="glass rounded-lg px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300"
                             >
                                 Cancel
                             </button>

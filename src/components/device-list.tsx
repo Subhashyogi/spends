@@ -148,7 +148,7 @@ export default function DeviceList() {
 
             <div className="space-y-3">
                 {(showAll ? sessions : sessions.slice(0, 2)).map((session) => (
-                    <div key={session.sessionId} className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+                    <div key={session.sessionId} className="glass flex items-center justify-between rounded-xl p-4">
                         <div className="flex items-center gap-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
                                 {session.device.toLowerCase().includes("mobile") ? (
@@ -197,7 +197,7 @@ export default function DeviceList() {
                 {sessions.length > 2 && (
                     <button
                         onClick={() => setShowAll(!showAll)}
-                        className="w-full rounded-xl border border-dashed border-zinc-300 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-300"
+                        className="glass w-full rounded-xl py-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors"
                     >
                         {showAll ? "Show Less" : `View All (${sessions.length - 2} more)`}
                     </button>

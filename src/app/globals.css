@@ -7,27 +7,65 @@
 
 @custom-variant dark (&:where(.dark *));
 
-/* Improve native UI colors */
-html { color-scheme: light; }
-html.dark { color-scheme: dark; }
 
-/* Global cursor pointer for interactive elements */
-button, 
-[type='button'], 
-[type='reset'], 
-[type='submit'], 
-[role="button"],
-a,
-select,
-input[type="checkbox"],
-input[type="radio"] {
-  cursor: pointer;
+@layer utilities {
+  .glass {
+    @apply bg-white/60 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-lg;
+  }
+
+  .glass-heavy {
+    @apply bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-xl;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
 }
 
-button:disabled,
-[type='button']:disabled,
-[type='reset']:disabled,
-[type='submit']:disabled,
-[role="button"][aria-disabled="true"] {
-  cursor: not-allowed;
+/* Mesh Gradient Animation */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 10s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+body {
+  @apply bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-50 transition-colors duration-300;
+  /* Premium dark mode gradient */
+  background-image:
+    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+}
+
+.dark body {
+  background-image:
+    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225, 39%, 10%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(339, 49%, 10%, 1) 0, transparent 50%);
 }

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { safeJson } from "@/lib/http";
 import { type LucideIconName, icons } from "@/lib/icons";
+import ReceiptScanner from "./receipt-scanner";
 
 interface TransactionFormProps {
   onTransactionAdded?: () => void;
@@ -53,18 +54,31 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
 
   // --- Handlers ---
 
-  const handleSmsParse = () => {
+  const handleSmsParse = async () => {
     if (!smsText.trim()) return;
     setLoading(true);
-    setTimeout(() => {
-      const result = smsParser.parse(smsText);
-      if (result.amount) setAmount(result.amount.toString());
-      if (result.description) setDescription(result.description);
-      // Try to map date if found
+    try {
+      const res = await fetch("/api/ai/parse-transaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: smsText })
+      });
+      const { data } = await safeJson(res);
+
+      if (data) {
+        if (data.amount) setAmount(data.amount.toString());
+        if (data.description) setDescription(data.description);
+        if (data.category) setCategory(data.category);
+        if (data.type) setType(data.type);
+        setSmsMode(false);
+        setSmsText("");
+      }
+    } catch (e) {
+      console.error("AI Parse Error", e);
+      setError("Failed to understand text. Try being more specific.");
+    } finally {
       setLoading(false);
-      setSmsMode(false);
-      setSmsText("");
-    }, 600);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,7 +158,7 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
   return (
     <motion.div
       layout
-      className="w-full max-w-2xl mx-auto overflow-hidden bg-white border border-zinc-200 shadow-xl dark:bg-zinc-950 dark:border-zinc-800 rounded-3xl"
+      className="glass w-full max-w-2xl mx-auto overflow-hidden rounded-3xl"
     >
       {/* 1. Header & Type Switcher */}
       <div className="relative p-6 pb-2 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -176,9 +190,9 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
           <button
             onClick={() => { setSmsMode(!smsMode); setReceiptMode(false); }}
             className="p-2 text-zinc-400 transition-colors bg-zinc-50 rounded-xl hover:text-emerald-600 hover:bg-emerald-50 dark:bg-zinc-900 dark:hover:bg-emerald-900/20"
-            title="Paste SMS"
+            title="AI Magic Input"
           >
-            <MessageSquare className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
           </button>
           {type === 'expense' && (
             <button
@@ -203,23 +217,30 @@ export default function TransactionForm({ onTransactionAdded, categories }: Tran
                 <textarea
                   value={smsText}
                   onChange={(e) => setSmsText(e.target.value)}
-                  placeholder="Paste bank SMS here... e.g. 'Rs 250 paid to Swiggy'"
+                  placeholder="✨ Magic Input: 'Paid 300 for Coffee' or paste SMS..."
                   className="w-full p-3 text-sm bg-white border-0 shadow-sm resize-none rounded-xl focus:ring-2 focus:ring-emerald-500 dark:bg-zinc-900"
                   rows={2}
                 />
-                <button type="button" onClick={handleSmsParse} disabled={loading} className="flex items-center justify-center w-full gap-2 py-2 mt-2 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-500">
+                <button type="button" onClick={handleSmsParse} disabled={loading} className="flex items-center justify-center w-full gap-2 py-2 mt-2 text-xs font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg hover:from-indigo-600 hover:to-purple-700 shadow-md">
                   {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                  Auto-Fill Form
+                  Auto-Fill with AI
                 </button>
               </div>
             </motion.div>
           )}
           {receiptMode && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <div className="p-4 text-center border border-indigo-100 bg-indigo-50/50 rounded-2xl dark:bg-indigo-900/10 dark:border-indigo-800/30">
-                <p className="mb-2 text-sm text-indigo-800 dark:text-indigo-200">Receipt Scanner coming soon!</p>
-                <button type="button" onClick={() => setReceiptMode(false)} className="text-xs font-medium underline text-zinc-500">Close</button>
-              </div>
+               <div className="mb-4">
+                  <ReceiptScanner onScanComplete={(data) => {
+                      if (data.amount) setAmount(data.amount.toString());
+                      if (data.description) setDescription(data.description);
+                      if (data.category) setCategory(data.category);
+                      if (data.date) setDate(data.date);
+                      if (data.merchant) setDescription(prev => prev ? `${data.merchant} - ${prev}` : data.merchant);
+                      setReceiptMode(false);
+                  }} />
+                  <button type="button" onClick={() => setReceiptMode(false)} className="mt-2 w-full text-center text-xs font-medium underline text-zinc-500">Close Scanner</button>
+               </div>
             </motion.div>
           )}
         </AnimatePresence>

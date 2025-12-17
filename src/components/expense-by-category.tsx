@@ -61,7 +61,7 @@ export default function ExpenseByCategory({ transactions }: ExpenseByCategoryPro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="rounded-3xl border border-zinc-200/50 bg-white/80 p-6 shadow-xl shadow-zinc-200/20 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-900/80 dark:shadow-zinc-900/20"
+      className="glass rounded-3xl p-6"
     >
       <div className="mb-6 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Expense by Category</h3>

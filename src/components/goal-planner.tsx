@@ -40,10 +40,11 @@ export default function GoalPlanner() {
     if (loading) return null;
 
     return (
-        <div className="rounded-3xl border border-white/10 bg-gray-900/40 backdrop-blur-md p-6">
+
+        <div className="glass rounded-3xl p-6">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <span className="p-1 rounded bg-blue-500/20 text-blue-400">🎯</span>
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <span className="p-1 rounded bg-blue-500/20 text-blue-500">🎯</span>
                     Goal Planner
                 </h3>
                 <Button onClick={() => setShowForm(!showForm)} size="sm">
@@ -62,7 +63,7 @@ export default function GoalPlanner() {
                     >
                         <input
                             placeholder="Goal Title (e.g., Vacation)"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white"
+                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-zinc-900 dark:bg-zinc-800/50 dark:border-zinc-700 dark:text-zinc-100"
                             value={newGoal.title}
                             onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
                             required
@@ -71,14 +72,14 @@ export default function GoalPlanner() {
                             <input
                                 type="number"
                                 placeholder="Target Amount"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white"
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-zinc-900 dark:bg-zinc-800/50 dark:border-zinc-700 dark:text-zinc-100"
                                 value={newGoal.targetAmount}
                                 onChange={(e) => setNewGoal({ ...newGoal, targetAmount: e.target.value })}
                                 required
                             />
                             <input
                                 type="date"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white"
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-zinc-900 dark:bg-zinc-800/50 dark:border-zinc-700 dark:text-zinc-100"
                                 value={newGoal.deadline}
                                 onChange={(e) => setNewGoal({ ...newGoal, deadline: e.target.value })}
                                 required
@@ -91,19 +92,19 @@ export default function GoalPlanner() {
 
             <div className="space-y-4">
                 {goals.length === 0 && !showForm && (
-                    <div className="text-center text-gray-500 py-8">
+                    <div className="text-center text-zinc-500 py-8">
                         No goals set yet. Start planning!
                     </div>
                 )}
 
                 {goals.map((goal) => (
-                    <div key={goal._id} className="bg-white/5 rounded-xl p-5 border border-white/5 space-y-3">
+                    <div key={goal._id} className="rounded-xl p-5 border border-zinc-200 bg-white/50 dark:bg-zinc-800/30 dark:border-zinc-700/50 space-y-3">
                         <div className="flex justify-between items-start">
                             <div>
-                                <h4 className="text-white font-bold text-lg">{goal.title}</h4>
-                                <p className="text-sm text-gray-400">Target: ₹{goal.targetAmount.toLocaleString()}</p>
+                                <h4 className="text-zinc-900 dark:text-zinc-100 font-bold text-lg">{goal.title}</h4>
+                                <p className="text-sm text-zinc-500">Target: ₹{goal.targetAmount.toLocaleString()}</p>
                             </div>
-                            <div className={`px-3 py-1 rounded-full text-xs font-bold ${goal.analysis?.onTrack ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                            <div className={`px-3 py-1 rounded-full text-xs font-bold ${goal.analysis?.onTrack ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
                                 {goal.analysis?.onTrack ? 'ON TRACK' : 'NEEDS ACTION'}
                             </div>
                         </div>

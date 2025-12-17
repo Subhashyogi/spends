@@ -195,16 +195,16 @@ export default function InsightsCard() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {insightsList.map((item, i) => (
-          <div key={i} className="group relative overflow-hidden rounded-2xl border border-white/5 bg-gray-900/40 p-4 transition-all hover:bg-gray-800/60 hover:border-indigo-500/20 backdrop-blur-sm">
+          <div key={i} className="group relative overflow-hidden glass rounded-2xl p-4 transition-all hover:scale-[1.02] hover:shadow-lg">
             <div className="flex gap-4">
               <div className="text-2xl">{item.icon}</div>
               <div>
-                <h4 className="text-sm font-semibold text-gray-200 mb-1">{item.title}</h4>
-                <p className="text-xs text-gray-400 leading-relaxed">{item.text}</p>
+                <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">{item.title}</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">{item.text}</p>
               </div>
             </div>
             {/* Subtle gradient line at bottom */}
-            <div className={`absolute bottom-0 left-0 h-1 w-full opacity-30 
+            <div className={`absolute bottom-0 left-0 h-1 w-full opacity-50 
                     ${item.type === 'good' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' :
                 item.type === 'bad' ? 'bg-gradient-to-r from-rose-500 to-orange-500' :
                   'bg-gradient-to-r from-blue-500 to-indigo-500'}`} />

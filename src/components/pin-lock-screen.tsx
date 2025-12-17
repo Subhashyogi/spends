@@ -58,20 +58,19 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
                             key={i}
                             animate={error ? { x: [-10, 10, -10, 10, 0] } : {}}
                             className={`h-4 w-4 rounded-full transition-colors ${i < pin.length
-                                    ? "bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
-                                    : "bg-zinc-800"
+                                ? "bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                                : "bg-zinc-800"
                                 }`}
                         />
                     ))}
                 </div>
 
-                {/* NumPad */}
                 <div className="grid grid-cols-3 gap-4">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                         <button
                             key={num}
                             onClick={() => handleNumClick(num.toString())}
-                            className="flex h-16 items-center justify-center rounded-2xl bg-zinc-900/50 text-2xl font-medium text-white transition-all hover:bg-zinc-800 active:scale-95"
+                            className="glass flex h-16 items-center justify-center rounded-2xl text-2xl font-medium text-white transition-all active:scale-95"
                         >
                             {num}
                         </button>
@@ -79,13 +78,13 @@ export default function PinLockScreen({ onUnlock }: PinLockScreenProps) {
                     <div /> {/* Empty slot */}
                     <button
                         onClick={() => handleNumClick("0")}
-                        className="flex h-16 items-center justify-center rounded-2xl bg-zinc-900/50 text-2xl font-medium text-white transition-all hover:bg-zinc-800 active:scale-95"
+                        className="glass flex h-16 items-center justify-center rounded-2xl text-2xl font-medium text-white transition-all active:scale-95"
                     >
                         0
                     </button>
                     <button
                         onClick={handleDelete}
-                        className="flex h-16 items-center justify-center rounded-2xl bg-zinc-900/50 text-white transition-all hover:bg-zinc-800 active:scale-95"
+                        className="glass flex h-16 items-center justify-center rounded-2xl text-white transition-all active:scale-95"
                     >
                         <Delete className="h-6 w-6" />
                     </button>

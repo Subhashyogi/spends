@@ -117,7 +117,7 @@ export default function ReportGenerator() {
     return (
         <div className="space-y-8">
             {/* Controls */}
-            <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="glass flex flex-col items-center justify-between gap-4 rounded-2xl p-4 shadow-sm sm:flex-row">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => setSelectedDate(subMonths(selectedDate, 1))}

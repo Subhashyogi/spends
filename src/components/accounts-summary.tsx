@@ -47,10 +47,10 @@ export default function AccountsSummary() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="rounded-2xl border bg-white/70 p-5 shadow-sm backdrop-blur dark:bg-zinc-900/60"
+      className="glass rounded-2xl p-5"
     >
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Accounts Summary</h3>
+        <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Accounts Summary</h3>
         {loading && <span className="text-xs text-zinc-500">Loading…</span>}
       </div>
 
@@ -59,21 +59,21 @@ export default function AccountsSummary() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((r) => (
-            <div key={r.account} className="rounded-xl border p-3 dark:border-zinc-800">
+            <div key={r.account} className="glass rounded-xl p-3">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{r.account || "(unnamed)"}</div>
-                <div className={`text-xs ${r.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{fmt(r.net)}</div>
+                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{r.account || "(unnamed)"}</div>
+                <div className={`text-xs ${r.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{fmt(r.net)}</div>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-zinc-600 dark:text-zinc-300">
-                <div>Income: {fmt(r.income)}</div>
-                <div>Expense: {fmt(r.expense)}</div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-zinc-500">
+                <div>Income: <span className="text-zinc-700 dark:text-zinc-300">{fmt(r.income)}</span></div>
+                <div>Expense: <span className="text-zinc-700 dark:text-zinc-300">{fmt(r.expense)}</span></div>
               </div>
             </div>
           ))}
-          <div className="rounded-xl border p-3 dark:border-zinc-800">
+          <div className="glass rounded-xl p-3">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Net Worth</div>
-              <div className={`text-xs ${total >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{fmt(total)}</div>
+              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Net Worth</div>
+              <div className={`text-xs ${total >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{fmt(total)}</div>
             </div>
             <div className="mt-2 text-xs text-zinc-500">Sum of all account balances (income - expense).</div>
           </div>

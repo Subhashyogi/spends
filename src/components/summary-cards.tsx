@@ -113,69 +113,69 @@ export default function SummaryCards({ transactions = [] }: { transactions: any[
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.02 }}
-          className="rounded-2xl border bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-5 shadow-sm backdrop-blur-sm border-green-500/30"
+          className="rounded-2xl border bg-gradient-to-br from-green-500/20 to-emerald-500/20 p-5 shadow-lg backdrop-blur-xl border-green-500/30"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">This Month Income</span>
-            <div className="rounded-full p-2 text-emerald-600 dark:text-emerald-400"><TrendingUp className="h-5 w-5" /></div>
-          </div>
-          <div className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            {new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(stats.monthIncome)}
-          </div>
-        </motion.div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">This Month Income</span>
+          <div className="rounded-full p-2 text-emerald-600 dark:text-emerald-400"><TrendingUp className="h-5 w-5" /></div>
+        </div>
+        <div className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          {new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(stats.monthIncome)}
+        </div>
+      </motion.div>
 
-        {/* This Month Expense */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.06 }}
-          className="rounded-2xl border bg-gradient-to-br from-rose-500/20 to-red-500/20 p-5 shadow-sm backdrop-blur-sm border-rose-500/30"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">This Month Expense</span>
-            <div className="rounded-full p-2 text-rose-600 dark:text-rose-400"><TrendingDown className="h-5 w-5" /></div>
-          </div>
-          <div className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            {new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(stats.monthExpense)}
-          </div>
-        </motion.div>
+      {/* This Month Expense */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.06 }}
+        className="rounded-2xl border bg-gradient-to-br from-rose-500/20 to-red-500/20 p-5 shadow-lg backdrop-blur-xl border-rose-500/30"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">This Month Expense</span>
+          <div className="rounded-full p-2 text-rose-600 dark:text-rose-400"><TrendingDown className="h-5 w-5" /></div>
+        </div>
+        <div className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          {new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(stats.monthExpense)}
+        </div>
+      </motion.div>
 
-        {/* Biggest Category This Month */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.10 }}
-          className="rounded-2xl border bg-gradient-to-br from-indigo-500/20 to-violet-500/20 p-5 shadow-sm backdrop-blur-sm border-indigo-500/30"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Biggest Category This Month</span>
-            <div className="rounded-full p-2 text-indigo-600 dark:text-indigo-400"><BarChart3 className="h-5 w-5" /></div>
-          </div>
-          <div className="mt-3 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-            {stats.biggestCat ? (
-              `${stats.biggestCat.category || "(uncategorized)"} – ${new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(stats.biggestCat.total)}`
-            ) : (
-              "—"
-            )}
-          </div>
-        </motion.div>
+      {/* Biggest Category This Month */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.10 }}
+        className="rounded-2xl border bg-gradient-to-br from-indigo-500/20 to-violet-500/20 p-5 shadow-lg backdrop-blur-xl border-indigo-500/30"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Biggest Category This Month</span>
+          <div className="rounded-full p-2 text-indigo-600 dark:text-indigo-400"><BarChart3 className="h-5 w-5" /></div>
+        </div>
+        <div className="mt-3 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+          {stats.biggestCat ? (
+            `${stats.biggestCat.category || "(uncategorized)"} – ${new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(stats.biggestCat.total)}`
+          ) : (
+            "—"
+          )}
+        </div>
+      </motion.div>
 
-        {/* No. of Transactions This Month */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.14 }}
-          className="rounded-2xl border bg-gradient-to-br from-zinc-500/20 to-zinc-500/10 p-5 shadow-sm backdrop-blur-sm border-zinc-500/30"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">No. of Transactions This Month</span>
-            <div className="rounded-full p-2 text-zinc-700 dark:text-zinc-200"><ListOrdered className="h-5 w-5" /></div>
-          </div>
-          <div className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            {new Intl.NumberFormat().format(stats.txCount)}
-          </div>
-        </motion.div>
-      </div>
+      {/* No. of Transactions This Month */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.14 }}
+        className="rounded-2xl border bg-gradient-to-br from-zinc-500/20 to-zinc-500/10 p-5 shadow-lg backdrop-blur-xl border-zinc-500/30"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">No. of Transactions This Month</span>
+          <div className="rounded-full p-2 text-zinc-700 dark:text-zinc-200"><ListOrdered className="h-5 w-5" /></div>
+        </div>
+        <div className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          {new Intl.NumberFormat().format(stats.txCount)}
+        </div>
+      </motion.div>
+    </div >
 
       <div className="grid gap-4 sm:grid-cols-3 mt-4">
         {cards.map((c, i) => (
@@ -187,7 +187,7 @@ export default function SummaryCards({ transactions = [] }: { transactions: any[
             className={
               "rounded-2xl border bg-gradient-to-br " +
               c.color +
-              " p-5 backdrop-blur-sm shadow-sm"
+              " p-5 backdrop-blur-xl shadow-lg"
             }
           >
             <div className="flex items-center justify-between">

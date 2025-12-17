@@ -77,9 +77,9 @@ export default function ActivityLog() {
                     key={log._id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-3 rounded-xl border border-zinc-100 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                    className="glass flex items-start gap-3 rounded-xl p-3"
                 >
-                    <div className="mt-1 rounded-full bg-zinc-50 p-2 dark:bg-zinc-800">
+                    <div className="mt-1 rounded-full bg-zinc-100 p-2 dark:bg-zinc-800">
                         {getIcon(log.action)}
                     </div>
                     <div className="flex-1">
@@ -101,7 +101,7 @@ export default function ActivityLog() {
             {logs.length > 5 && (
                 <button
                     onClick={() => setShowAll(!showAll)}
-                    className="w-full rounded-xl border border-dashed border-zinc-200 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-800 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                    className="glass w-full rounded-xl py-2 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
                 >
                     {showAll ? "Show Less" : "View All"}
                 </button>

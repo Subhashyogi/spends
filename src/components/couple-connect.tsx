@@ -80,7 +80,7 @@ export default function CoupleConnect() {
     if (loading) return <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />;
 
     return (
-        <div className="rounded-2xl border bg-white/70 p-6 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/60">
+        <div className="glass rounded-2xl p-6">
             <div className="mb-6 flex items-center gap-3">
                 <div className="rounded-full bg-rose-100 p-2 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400">
                     <Heart className="h-6 w-6" />
@@ -95,7 +95,7 @@ export default function CoupleConnect() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center justify-center gap-4 rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-900/30 dark:bg-rose-900/10"
+                    className="glass flex flex-col items-center justify-center gap-4 rounded-xl border-rose-200/50 bg-rose-50/50 p-6 text-center dark:border-rose-900/30 dark:bg-rose-900/10"
                 >
                     <div className="flex items-center gap-2 text-lg font-medium text-rose-700 dark:text-rose-300">
                         <Heart className="h-5 w-5 fill-rose-600 text-rose-600" />
@@ -116,12 +116,12 @@ export default function CoupleConnect() {
                     <div className="space-y-4">
                         <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Your Invite Code</h3>
                         <div className="flex items-center gap-2">
-                            <div className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-lg font-mono font-bold tracking-widest text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+                            <div className="glass flex-1 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest text-zinc-900 dark:text-zinc-100">
                                 {inviteCode}
                             </div>
                             <button
                                 onClick={copyCode}
-                                className="rounded-xl border border-zinc-200 p-3 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                                className="glass rounded-xl p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                                 title="Copy Code"
                             >
                                 {copied ? <Check className="h-5 w-5 text-emerald-500" /> : <Copy className="h-5 w-5 text-zinc-500" />}
@@ -131,7 +131,7 @@ export default function CoupleConnect() {
                     </div>
 
                     {/* Enter Code */}
-                    <div className="space-y-4 border-t pt-4 md:border-l md:border-t-0 md:pl-8 md:pt-0 dark:border-zinc-800">
+                    <div className="space-y-4 border-t border-zinc-200/50 pt-4 md:border-l md:border-t-0 md:pl-8 md:pt-0 dark:border-zinc-800/50">
                         <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Enter Partner's Code</h3>
                         <div className="flex gap-2">
                             <input
@@ -139,7 +139,7 @@ export default function CoupleConnect() {
                                 value={inputCode}
                                 onChange={(e) => setInputCode(e.target.value.toUpperCase())}
                                 placeholder="Ex: X9Y2Z1"
-                                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 font-mono uppercase outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-900"
+                                className="glass w-full rounded-xl px-4 py-2 font-mono uppercase outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                                 maxLength={6}
                             />
                             <button

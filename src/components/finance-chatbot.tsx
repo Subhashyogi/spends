@@ -137,9 +137,9 @@ export default function FinanceChatbot({ embedded = false, className = "" }: { e
 
     if (embedded) {
         return (
-            <div className={`flex h-full w-full flex-col overflow-hidden bg-white dark:bg-zinc-900 ${className || 'rounded-3xl border border-zinc-200 dark:border-zinc-800'}`}>
+            <div className={`glass flex h-full w-full flex-col overflow-hidden ${className || 'rounded-3xl'}`}>
                 {/* Header (Simplified for embedded) */}
-                <div className="flex items-center justify-between border-b border-zinc-100 bg-white/50 p-4 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/50">
+                <div className="flex items-center justify-between border-b border-zinc-200/50 bg-white/30 p-4 backdrop-blur-md dark:border-zinc-800/50 dark:bg-zinc-900/30">
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
                             <Bot className="h-6 w-6" />
@@ -222,14 +222,14 @@ export default function FinanceChatbot({ embedded = false, className = "" }: { e
                 </div>
 
                 {/* Input Area */}
-                <form onSubmit={handleSend} className="border-t border-zinc-100 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <form onSubmit={handleSend} className="border-t border-zinc-200/50 bg-transparent p-4 dark:border-zinc-800/50">
                     <div className="relative flex items-center">
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Ask about your spending..."
-                            className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-3 pl-4 pr-12 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
+                            className="glass w-full rounded-full py-3 pl-4 pr-12 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:text-zinc-100 dark:placeholder-zinc-500"
                         />
                         <button
                             type="submit"
@@ -252,10 +252,10 @@ export default function FinanceChatbot({ embedded = false, className = "" }: { e
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="fixed bottom-24 right-6 z-50 flex h-[500px] max-h-[calc(100vh-8rem)] w-[350px] flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white/90 shadow-2xl backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/90"
+                        className="glass-heavy fixed bottom-24 right-6 z-50 flex h-[500px] max-h-[calc(100vh-8rem)] w-[350px] flex-col overflow-hidden rounded-3xl shadow-2xl"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between border-b border-zinc-100 bg-white/50 p-4 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/50">
+                        <div className="flex items-center justify-between border-b border-zinc-200/50 bg-white/30 p-4 backdrop-blur-md dark:border-zinc-800/50 dark:bg-zinc-900/30">
                             <div className="flex items-center gap-3">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
                                     <Bot className="h-6 w-6" />
@@ -343,14 +343,14 @@ export default function FinanceChatbot({ embedded = false, className = "" }: { e
                         </div>
 
                         {/* Input Area */}
-                        <form onSubmit={handleSend} className="border-t border-zinc-100 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                        <form onSubmit={handleSend} className="border-t border-zinc-200/50 bg-transparent p-4 dark:border-zinc-800/50">
                             <div className="relative flex items-center">
                                 <input
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     placeholder="Ask about your spending..."
-                                    className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-3 pl-4 pr-12 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
+                                    className="glass w-full rounded-full py-3 pl-4 pr-12 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:text-zinc-100 dark:placeholder-zinc-500"
                                 />
                                 <button
                                     type="submit"

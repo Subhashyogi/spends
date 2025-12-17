@@ -90,7 +90,7 @@ export default function InsightsCenter() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                            className="relative group overflow-hidden rounded-3xl border border-white/10 bg-gray-900/40 backdrop-blur-md shadow-2xl transition-all hover:bg-gray-800/60 hover:border-indigo-500/30"
+                            className="glass relative group overflow-hidden rounded-3xl shadow-2xl transition-all hover:bg-white/80 dark:hover:bg-zinc-800/80"
                         >
                             {/* Animated Background Gradient */}
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/5 via-transparent to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

@@ -54,7 +54,7 @@ export default function FriendsManager() {
     };
 
     return (
-        <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="glass rounded-3xl p-6">
             <div className="mb-4">
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                     <Search className="h-5 w-5 text-indigo-500" />
@@ -70,7 +70,7 @@ export default function FriendsManager() {
                         value={query}
                         onChange={(e) => handleSearch(e.target.value)}
                         placeholder="Search by name or username..."
-                        className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-4 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800"
+                        className="glass w-full rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     />
                 </div>
 
@@ -81,7 +81,7 @@ export default function FriendsManager() {
                         </div>
                     ) : results.length > 0 ? (
                         results.map((user) => (
-                            <div key={user.id} className="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
+                            <div key={user.id} className="glass flex items-center justify-between rounded-xl p-3">
                                 <div className="flex items-center gap-3">
                                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
                                         {user.avatar ? (

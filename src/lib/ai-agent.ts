@@ -158,12 +158,81 @@ export const aiAgent = {
         }
     },
 
+    // 4. Generate Deep Monthly Analysis (Gemini Powered)
+    generateMonthlyReport: async (userId: string) => {
+        await connectToDatabase();
+        const now = new Date();
+        const lastMonthStart = startOfMonth(subMonths(now, 1));
+        const lastMonthEnd = endOfMonth(subMonths(now, 1));
+
+        // Gather Data
+        const txs = await Transaction.find({
+            userId,
+            date: { $gte: lastMonthStart, $lte: lastMonthEnd }
+        }).select('amount category description type date');
+
+        if (txs.length === 0) return;
+
+        const totalSpent = txs.filter((t: any) => t.type === 'expense').reduce((sum: number, t: any) => sum + t.amount, 0);
+        const totalIncome = txs.filter((t: any) => t.type === 'income').reduce((sum: number, t: any) => sum + t.amount, 0);
+
+        // Prompt Gemini
+        const prompt = `
+        Analyze this month's financial data for a user:
+        - Total Income: ₹${totalIncome}
+        - Total Expense: ₹${totalSpent}
+        - Transactions: ${JSON.stringify(txs.slice(0, 50))} (Top 50 shown)
+
+        Generate a concise "Monthly Strategy Report" in JSON format with:
+        - "summary": One distinct sentence summarizing their behavior.
+        - "anomalies": List of strings (e.g. "Unusually high spending on Uber").
+        - "tips": List of actionable advice.
+        - "score_update": A number from -5 to +5 indicating how their score should change based on habits.
+
+        Return ONLY JSON.
+        `;
+
+        try {
+            const { reasonerModel } = await import("@/lib/gemini");
+            const result = await reasonerModel.generateContent(prompt);
+            const text = result.response.text();
+            const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const report = JSON.parse(cleanedText);
+
+            // Save this as a special Insight
+            const existing = await Insight.findOne({
+                userId,
+                type: 'monthly_report',
+                'data.month': lastMonthStart.toISOString().slice(0, 7)
+            });
+
+            if (!existing) {
+                await Insight.create({
+                    userId,
+                    type: 'monthly_report',
+                    title: `Monthly Analysis: ${lastMonthStart.toLocaleString('default', { month: 'long' })}`,
+                    message: report.summary,
+                    data: {
+                        month: lastMonthStart.toISOString().slice(0, 7),
+                        report
+                    },
+                    confidence: 'high'
+                });
+            }
+
+        } catch (error) {
+            console.error("AI Report Generation Failed:", error);
+        }
+    },
+
     // Master Orchestrator
     runAgent: async (userId: string) => {
         console.log(`[Agent] Running for user: ${userId}`);
         await aiAgent.detectOverspending(userId);
         await aiAgent.detectRecurring(userId);
         await aiAgent.detectBudgetAdjustments(userId);
+        // Run deep analysis occasionally (e.g., login or explicit trigger)
+        // await aiAgent.generateMonthlyReport(userId); 
         console.log(`[Agent] Finished run for ${userId}`);
         return { success: true };
     }

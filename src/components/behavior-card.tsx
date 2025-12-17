@@ -23,12 +23,12 @@ export default function BehaviorCard() {
     const maxTimeVal = Math.max(...Object.values(data.timeBuckets || {}) as number[]);
 
     return (
-        <div className="rounded-3xl border border-white/10 bg-gray-900/40 backdrop-blur-md p-6 relative overflow-hidden">
-            {/* Gradient Background */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500" />
+        <div className="glass relative overflow-hidden rounded-3xl p-6">
+            {/* Gradient Background - Subtle */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 opacity-50" />
 
-            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                <span className="p-1 rounded bg-purple-500/20 text-purple-400">🧠</span>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-6 flex items-center gap-2">
+                <span className="p-1 rounded bg-purple-500/20 text-purple-600 dark:text-purple-400">🧠</span>
                 Behavioral DNA
             </h3>
 
@@ -41,14 +41,14 @@ export default function BehaviorCard() {
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: i * 0.1 }}
-                            className="bg-white/5 rounded-xl p-4 border border-white/5 flex gap-4 items-start hover:border-purple-500/30 transition-colors"
+                            className="glass flex gap-4 items-start p-4 hover:border-purple-500/30 transition-colors"
                         >
                             <div className="text-2xl mt-1">
                                 {insight.type === 'time' ? '⏰' : insight.type === 'weekend' ? '🎉' : '🛍️'}
                             </div>
                             <div>
-                                <h4 className="text-sm font-bold text-white mb-1">{insight.title}</h4>
-                                <p className="text-xs text-gray-300 leading-relaxed">{insight.message}</p>
+                                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1">{insight.title}</h4>
+                                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">{insight.message}</p>
                             </div>
                         </motion.div>
                     ))}
@@ -56,15 +56,15 @@ export default function BehaviorCard() {
 
                 {/* Time of Day Viz */}
                 {data.timeBuckets && (
-                    <div className="pt-4 border-t border-white/5">
-                        <p className="text-xs text-gray-400 uppercase font-medium mb-3 tracking-wider">Spending Routine</p>
+                    <div className="pt-4 border-t border-zinc-200/50 dark:border-zinc-800/50">
+                        <p className="text-xs text-zinc-400 uppercase font-medium mb-3 tracking-wider">Spending Routine</p>
                         <div className="flex items-end gap-2 h-24">
                             {['morning', 'afternoon', 'evening', 'night'].map((time) => {
                                 const val = data.timeBuckets[time] || 0;
                                 const height = maxTimeVal > 0 ? (val / maxTimeVal) * 100 : 0;
                                 return (
                                     <div key={time} className="flex-1 flex flex-col justify-end gap-2 group">
-                                        <div className="w-full bg-gray-800 rounded-t-lg relative overflow-hidden h-full">
+                                        <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-t-lg relative overflow-hidden h-full">
                                             <motion.div
                                                 initial={{ height: 0 }}
                                                 animate={{ height: `${height}%` }}
@@ -72,10 +72,10 @@ export default function BehaviorCard() {
                                                 className={`absolute bottom-0 w-full rounded-t-lg opacity-80 group-hover:opacity-100 transition-opacity
                                                     ${time === 'morning' ? 'bg-orange-400' :
                                                         time === 'afternoon' ? 'bg-yellow-400' :
-                                                            time === 'evening' ? 'bg-indigo-400' : 'bg-purple-900'}`}
+                                                            time === 'evening' ? 'bg-indigo-400' : 'bg-purple-600'}`}
                                             />
                                         </div>
-                                        <span className="text-[10px] text-center text-gray-500 capitalize truncate">{time}</span>
+                                        <span className="text-[10px] text-center text-zinc-500 capitalize truncate">{time}</span>
                                     </div>
                                 );
                             })}

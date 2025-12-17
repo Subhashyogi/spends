@@ -93,7 +93,7 @@ export default function RulesManager() {
     if (loading) return <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />;
 
     return (
-        <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="glass rounded-3xl p-6">
             <div className="mb-4 flex items-center justify-between">
                 <div>
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
@@ -116,13 +116,13 @@ export default function RulesManager() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="mb-4 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50"
+                        className="glass mb-4 overflow-hidden rounded-xl p-4"
                         onSubmit={addRule}
                     >
                         <div className="grid gap-3 sm:grid-cols-2">
                             <input
                                 placeholder="Rule Name (e.g. High Spend Alert)"
-                                className="col-span-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                                className="glass col-span-2 rounded-lg px-3 py-2 text-sm"
                                 value={name} onChange={e => setName(e.target.value)} required
                             />
 
@@ -130,7 +130,7 @@ export default function RulesManager() {
                             <div className="col-span-2 flex items-center gap-2 text-sm text-zinc-500">
                                 <span>If</span>
                                 <select
-                                    className="rounded-lg border border-zinc-200 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+                                    className="glass rounded-lg px-2 py-1"
                                     value={field} onChange={e => setField(e.target.value as any)}
                                 >
                                     <option value="amount">Amount</option>
@@ -138,7 +138,7 @@ export default function RulesManager() {
                                     <option value="time">Time (Hour 0-23)</option>
                                 </select>
                                 <select
-                                    className="rounded-lg border border-zinc-200 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+                                    className="glass rounded-lg px-2 py-1"
                                     value={operator} onChange={e => setOperator(e.target.value as any)}
                                 >
                                     <option value="gt">Greater Than</option>
@@ -147,7 +147,7 @@ export default function RulesManager() {
                                 </select>
                                 <input
                                     placeholder="Value"
-                                    className="w-24 rounded-lg border border-zinc-200 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+                                    className="glass w-24 rounded-lg px-2 py-1"
                                     value={value} onChange={e => setValue(e.target.value)} required
                                 />
                             </div>
@@ -156,7 +156,7 @@ export default function RulesManager() {
                             <div className="col-span-2 flex items-center gap-2 text-sm text-zinc-500">
                                 <span>Then</span>
                                 <select
-                                    className="rounded-lg border border-zinc-200 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+                                    className="glass rounded-lg px-2 py-1"
                                     value={actionType} onChange={e => setActionType(e.target.value as any)}
                                 >
                                     <option value="confirm">Ask Confirmation</option>
@@ -166,7 +166,7 @@ export default function RulesManager() {
                                 {actionType === 'tag' && (
                                     <input
                                         placeholder="Tag Name"
-                                        className="w-32 rounded-lg border border-zinc-200 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+                                        className="glass w-32 rounded-lg px-2 py-1"
                                         value={actionValue} onChange={e => setActionValue(e.target.value)} required
                                     />
                                 )}
@@ -185,11 +185,11 @@ export default function RulesManager() {
                     <p className="text-center text-sm text-zinc-500">No rules configured.</p>
                 ) : (
                     rules.map(rule => (
-                        <div key={rule.id} className="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/30">
+                        <div key={rule.id} className="glass flex items-center justify-between rounded-xl p-3">
                             <div className="flex items-center gap-3">
                                 <div className={`flex h-8 w-8 items-center justify-center rounded-full ${rule.action.type === 'alert' ? 'bg-red-100 text-red-500' :
-                                        rule.action.type === 'confirm' ? 'bg-amber-100 text-amber-500' :
-                                            'bg-blue-100 text-blue-500'
+                                    rule.action.type === 'confirm' ? 'bg-amber-100 text-amber-500' :
+                                        'bg-blue-100 text-blue-500'
                                     }`}>
                                     {rule.action.type === 'alert' && <AlertTriangle className="h-4 w-4" />}
                                     {rule.action.type === 'confirm' && <CheckCircle className="h-4 w-4" />}

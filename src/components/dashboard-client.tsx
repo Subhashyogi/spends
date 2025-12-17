@@ -131,12 +131,17 @@ export default function DashboardClient() {
 
   return (
     <AppLockProvider>
-      <div className="min-h-screen bg-zinc-50 pb-20 dark:bg-transparent relative overflow-hidden">
+      <div className="min-h-screen relative overflow-hidden text-zinc-900 dark:text-zinc-100 selection:bg-indigo-500/30">
         <NetworkStatus />
-        <div className="pointer-events-none absolute inset-0 flex justify-center">
-          <div className="h-[500px] w-[500px] rounded-full bg-indigo-500/10 blur-[100px] dark:bg-indigo-500/20" />
+
+        {/* Animated Mesh Background */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob dark:opacity-20"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 dark:bg-indigo-500 dark:opacity-20"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000 dark:bg-cyan-500 dark:opacity-20"></div>
         </div>
-        <main className="relative mx-auto w-full px-4 py-8 sm:px-6 lg:px-8">
+
+        <main className="relative z-10 mx-auto w-full px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-8">
 
             {/* Stories Row */}

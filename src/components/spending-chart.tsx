@@ -62,7 +62,7 @@ export default function SpendingChart({ transactions }: SpendingChartProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="rounded-2xl border bg-white/70 p-4 sm:p-5 shadow-sm backdrop-blur dark:bg-zinc-900/60"
+      className="glass rounded-3xl p-4 sm:p-5"
     >
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Last 30 days</h3>

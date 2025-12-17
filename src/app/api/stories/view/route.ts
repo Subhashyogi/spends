@@ -21,6 +21,15 @@ export async function POST(req: NextRequest) {
         const user = await User.findOne({ email: session.user.email });
         if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+        // Check if storyId is a valid ObjectId (24 char hex string)
+        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(storyId);
+
+        if (!isValidObjectId) {
+            // It's a virtual story (e.g., 'error_fallback', 'welcome', 'briefing')
+            // No need to update DB.
+            return NextResponse.json({ success: true });
+        }
+
         // Update Story: Add user to viewers if not already present
         // The viewers array contains ObjectIds.
         await Story.findByIdAndUpdate(

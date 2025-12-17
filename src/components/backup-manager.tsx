@@ -174,33 +174,33 @@ export default function BackupManager() {
             <div className="grid gap-4 md:grid-cols-3">
                 <button
                     onClick={() => { setMode("local"); setIsVerified(false); setPassword(""); setStatus(null); }}
-                    className={`flex flex-col items-center gap-3 rounded-2xl border p-6 transition-all ${mode === "local"
-                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
-                        : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                    className={`glass flex flex-col items-center gap-3 rounded-2xl p-6 transition-all ${mode === "local"
+                        ? "border-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/20 ring-2 ring-indigo-500/20"
+                        : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50"
                         }`}
                 >
-                    <Download className="h-8 w-8" />
-                    <span className="font-medium">Local Backup</span>
+                    <Download className={`h-8 w-8 ${mode === "local" ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-400"}`} />
+                    <span className={`font-medium ${mode === "local" ? "text-indigo-900 dark:text-indigo-100" : "text-zinc-600 dark:text-zinc-400"}`}>Local Backup</span>
                 </button>
                 <button
                     onClick={() => { setMode("cloud"); setIsVerified(false); setPassword(""); setStatus(null); }}
-                    className={`flex flex-col items-center gap-3 rounded-2xl border p-6 transition-all ${mode === "cloud"
-                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
-                        : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                    className={`glass flex flex-col items-center gap-3 rounded-2xl p-6 transition-all ${mode === "cloud"
+                        ? "border-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/20 ring-2 ring-indigo-500/20"
+                        : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50"
                         }`}
                 >
-                    <CloudUpload className="h-8 w-8" />
-                    <span className="font-medium">Cloud Sync</span>
+                    <CloudUpload className={`h-8 w-8 ${mode === "cloud" ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-400"}`} />
+                    <span className={`font-medium ${mode === "cloud" ? "text-indigo-900 dark:text-indigo-100" : "text-zinc-600 dark:text-zinc-400"}`}>Cloud Sync</span>
                 </button>
                 <button
                     onClick={() => { setMode("restore"); setIsVerified(false); setPassword(""); setStatus(null); }}
-                    className={`flex flex-col items-center gap-3 rounded-2xl border p-6 transition-all ${mode === "restore"
-                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-300"
-                        : "border-zinc-200 bg-white hover:border-indigo-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                    className={`glass flex flex-col items-center gap-3 rounded-2xl p-6 transition-all ${mode === "restore"
+                        ? "border-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/20 ring-2 ring-indigo-500/20"
+                        : "hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50"
                         }`}
                 >
-                    <RefreshCw className="h-8 w-8" />
-                    <span className="font-medium">Restore</span>
+                    <RefreshCw className={`h-8 w-8 ${mode === "restore" ? "text-indigo-600 dark:text-indigo-400" : "text-zinc-400"}`} />
+                    <span className={`font-medium ${mode === "restore" ? "text-indigo-900 dark:text-indigo-100" : "text-zinc-600 dark:text-zinc-400"}`}>Restore</span>
                 </button>
             </div>
 
@@ -208,7 +208,7 @@ export default function BackupManager() {
                 key={mode}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
+                className="glass rounded-2xl p-6"
             >
                 <div className="mb-6">
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">

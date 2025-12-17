@@ -80,7 +80,7 @@ export default function DailyLimitCard() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex h-48 flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center dark:border-zinc-700 dark:bg-zinc-900/50"
+                className="glass flex h-48 flex-col items-center justify-center rounded-3xl p-6 text-center"
             >
                 <Calculator className="mb-2 h-8 w-8 text-zinc-400" />
                 <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">No Monthly Budget</h3>
@@ -110,7 +110,7 @@ export default function DailyLimitCard() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col justify-between rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            className="glass flex flex-col justify-between rounded-3xl p-6"
         >
             <div className="flex items-start justify-between">
                 <div>

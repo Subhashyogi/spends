@@ -38,7 +38,7 @@ export default function AuthButtons() {
   return (
     <Link
       href="/profile"
-      className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+      className="glass flex h-9 w-9 items-center justify-center rounded-full text-zinc-600 transition hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700"
       title={name}
     >
       <User className="h-4 w-4" />

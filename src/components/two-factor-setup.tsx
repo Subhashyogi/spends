@@ -131,7 +131,7 @@ export default function TwoFactorSetup() {
                             value={code}
                             onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             placeholder="000000"
-                            className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-center text-lg tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800"
+                            className="glass w-full rounded-xl px-4 py-2 text-center text-lg tracking-widest outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                         />
                         <button
                             onClick={verifyCode}

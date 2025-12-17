@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/theme-toggle";
 import AuthButtons from "@/components/auth-buttons";
+import { CommandMenu } from "@/components/command-menu";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -23,6 +24,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
                 </div>
             </div>
             {children}
+            <CommandMenu />
         </div>
     );
 }
